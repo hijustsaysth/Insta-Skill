@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Instagram 养号 Skills 设计方案汇报</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --surface: #ffffff;
+      --surface-2: #eef2f7;
+      --ink: #172033;
+      --muted: #647086;
+      --line: #d9e0ea;
+      --accent: #1b6fb8;
+      --accent-2: #0f9f8f;
+      --warn: #b7791f;
+      --danger: #b42318;
+      --ok: #207a4d;
+      --shadow: 0 18px 50px rgba(23, 32, 51, 0.10);
+      --radius: 8px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101620;
+        --surface: #151d2a;
+        --surface-2: #1e2a3a;
+        --ink: #ecf2f8;
+        --muted: #a5b0c0;
+        --line: #2d3a4d;
+        --accent: #6bb6ff;
+        --accent-2: #55d6c4;
+        --warn: #e1b15b;
+        --danger: #ff8f82;
+        --ok: #7bd8a3;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(27, 111, 184, 0.08), transparent 360px),
+        var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 28px;
+      align-items: stretch;
+      padding: 32px 0 22px;
+    }
+
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 310px;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height: 1.05;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .hero-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+      align-content: center;
+    }
+
+    .hero-metric {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px 14px;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-metric:last-child {
+      border-bottom: 0;
+    }
+
+    .metric-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .metric-title {
+      margin: 0;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .metric-note {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      margin: 8px 0 30px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .nav a {
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .nav a:hover,
+    .nav a:focus-visible {
+      color: var(--ink);
+      background: var(--surface-2);
+      outline: none;
+    }
+
+    section {
+      margin: 42px 0;
+    }
+
+    .section-head {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 36px);
+      line-height: 1.2;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .section-head p {
+      max-width: 820px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .card p {
+      margin: 0;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      font-family: var(--mono);
+      background: var(--surface-2);
+    }
+
+    .status-ok {
+      color: var(--ok);
+      border-color: color-mix(in srgb, var(--ok) 35%, var(--line));
+      background: color-mix(in srgb, var(--ok) 10%, var(--surface));
+    }
+
+    .status-gap {
+      color: var(--warn);
+      border-color: color-mix(in srgb, var(--warn) 35%, var(--line));
+      background: color-mix(in srgb, var(--warn) 10%, var(--surface));
+    }
+
+    .status-risk {
+      color: var(--danger);
+      border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+      background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+    }
+
+    .matrix {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: var(--surface-2);
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      color: var(--accent);
+    }
+
+    .layers {
+      display: grid;
+      gap: 12px;
+    }
+
+    .layer {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .layer-label {
+      padding: 14px;
+      border-radius: var(--radius);
+      background: var(--ink);
+      color: var(--surface);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .layer-items {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .module {
+      min-height: 76px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 12px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+    }
+
+    .module strong {
+      font-size: 13px;
+      font-family: var(--mono);
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .module span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .flow-board {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .route {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .route h3 {
+      margin: 0 0 14px;
+    }
+
+    .route-steps {
+      display: grid;
+      gap: 10px;
+    }
+
+    .step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+    }
+
+    .step::after {
+      content: "";
+      position: absolute;
+      left: 28px;
+      bottom: -11px;
+      width: 2px;
+      height: 10px;
+      background: var(--line);
+    }
+
+    .step:last-child::after {
+      display: none;
+    }
+
+    .step-index {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .step-title {
+      margin: 0;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .step-note {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .swimlane {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      overflow-x: auto;
+    }
+
+    .lane {
+      min-width: 260px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .lane h3 {
+      margin: 0;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--line);
+      font-size: 15px;
+    }
+
+    .lane ul {
+      margin: 0;
+      padding: 14px 18px 16px 32px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .lane li + li {
+      margin-top: 8px;
+    }
+
+    .session-map {
+      display: grid;
+      grid-template-columns: 0.9fr 1.2fr 1.5fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .big-token {
+      background: var(--ink);
+      color: var(--surface);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .big-token strong {
+      display: block;
+      font-family: var(--mono);
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .big-token span {
+      color: color-mix(in srgb, var(--surface) 72%, transparent);
+      font-size: 13px;
+    }
+
+    .store {
+      display: grid;
+      gap: 10px;
+    }
+
+    .db-box {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 14px;
+    }
+
+    .db-box strong {
+      display: block;
+      margin-bottom: 4px;
+      font-family: var(--mono);
+    }
+
+    .db-box span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .provider-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fallback {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .fallback .step {
+      grid-template-columns: 1fr;
+      min-height: 142px;
+      align-content: start;
+    }
+
+    .fallback .step::after {
+      left: auto;
+      right: -13px;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      transform: translateY(-50%);
+    }
+
+    .fallback .step:last-child {
+      border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(130px, 1fr));
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .phase {
+      min-height: 132px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 12px;
+    }
+
+    .phase b {
+      display: block;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .phase strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .phase span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .callout {
+      display: grid;
+      grid-template-columns: 5px 1fr;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .callout::before {
+      content: "";
+      width: 5px;
+      border-radius: 99px;
+      background: var(--accent-2);
+    }
+
+    .callout p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .footer-note {
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .grid-2,
+      .grid-3,
+      .flow-board,
+      .session-map {
+        grid-template-columns: 1fr;
+      }
+
+      .layer {
+        grid-template-columns: 1fr;
+      }
+
+      .layer-items {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .fallback {
+        grid-template-columns: 1fr;
+      }
+
+      .fallback .step::after {
+        left: 26px;
+        right: auto;
+        top: auto;
+        bottom: -11px;
+        width: 2px;
+        height: 10px;
+        transform: none;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 24px, 1180px);
+      }
+
+      .hero-copy {
+        min-height: 0;
+      }
+
+      .layer-items {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .nav {
+        position: static;
+      }
+
+      .card,
+      .route,
+      .lane,
+      .db-box,
+      .phase,
+      .hero-panel {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Instagram warmup skills / design report</p>
+        <h1>Instagram 养号 Skills 设计方案汇报</h1>
+        <p class="lead">本方案把业务 skill 与执行层拆开：skill 负责生成计划、内容和决策，agent 服务负责选择 provider、调用工具、记录日志与处理执行状态。</p>
+      </div>
+      <aside class="hero-panel" aria-label="核心结论">
+        <div class="hero-metric">
+          <div class="metric-mark">01</div>
+          <div>
+            <p class="metric-title">同时兼容插件底座与非插件底座</p>
+            <p class="metric-note">Cordis 只作为一种适配层，不绑定业务 skill。</p>
+          </div>
+        </div>
+        <div class="hero-metric">
+          <div class="metric-mark">02</div>
+          <div>
+            <p class="metric-title">Python agent 存在 API 路线缺口</p>
+            <p class="metric-note">当前 TS core 不能直接复用，后续通过 protocol 层补齐。</p>
+          </div>
+        </div>
+        <div class="hero-metric">
+          <div class="metric-mark">03</div>
+          <div>
+            <p class="metric-title">计划型输出支撑评测</p>
+            <p class="metric-note">结构化计划和日志字段用于 benchmark 与 agent eval。</p>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <nav class="nav" aria-label="页面目录">
+      <a href="#compat">兼容方案</a>
+      <a href="#boundary">职责边界</a>
+      <a href="#layers">分层结构</a>
+      <a href="#routes">执行路线</a>
+      <a href="#session-ref">sessionRef</a>
+      <a href="#connector">connector 兜底</a>
+      <a href="#eval">agent eval</a>
+      <a href="#order">开发顺序</a>
+    </nav>
+
+    <section id="compat">
+      <div class="section-head">
+        <h2>兼容插件机制底座与非插件机制底座</h2>
+        <p>兼容性的关键不是让所有底座都理解 Cordis，而是把业务 skill、provider client、MCP connector 和未来 protocol 层拆成可替换边界。</p>
+      </div>
+
+      <div class="matrix">
+        <table>
+          <thead>
+            <tr>
+              <th>底座类型</th>
+              <th>可用路线</th>
+              <th>当前状态</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>支持插件机制的 TS agent</strong></td>
+              <td><code>instagram</code> + <code>ctx.instagram</code> + provider</td>
+              <td><span class="tag status-ok">可设计落地</span></td>
+              <td>通过 Cordis 声明上下文服务，agent 服务读取 skill 计划后调用 provider。</td>
+            </tr>
+            <tr>
+              <td><strong>无插件机制的 TS / Node agent</strong></td>
+              <td>普通 <code>InstagramClient</code> 或 HTTP provider</td>
+              <td><span class="tag status-ok">可复用 client</span></td>
+              <td>不加载 Cordis；provider 主入口只导出 client/config/types。</td>
+            </tr>
+            <tr>
+              <td><strong>支持 MCP 的 Python agent</strong></td>
+              <td><code>instagram-connector</code> MCP Server</td>
+              <td><span class="tag status-ok">可直接连接</span></td>
+              <td>MCP 是协议边界，不要求 Python agent 支持 Cordis 插件机制。</td>
+            </tr>
+            <tr>
+              <td><strong>Python agent 使用 API provider</strong></td>
+              <td>未来 <code>instagram-protocol</code> + HTTP/MCP 服务适配层</td>
+              <td><span class="tag status-gap">存在缺口</span></td>
+              <td>当前 <code>instagram-core</code> 是 TS 类型包，Python 不能直接复用，需要用 OpenAPI/JSON Schema 固化协议。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="boundary">
+      <div class="section-head">
+        <h2>职责边界：skill 提供计划，agent 决定执行</h2>
+        <p>业务 skill 不直接操作 Instagram，也不替 agent 做 provider 选择。它输出可审计的计划和参数草案，执行结果由 agent 服务回写。</p>
+      </div>
+
+      <div class="swimlane" role="img" aria-label="skill、agent 服务、provider 的职责分工">
+        <div class="lane">
+          <h3>业务 skill</h3>
+          <ul>
+            <li>理解目标与账号阶段</li>
+            <li>生成计划、内容、决策</li>
+            <li>输出工具参数草案</li>
+            <li>汇总真实执行日志</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <h3>agent 服务</h3>
+          <ul>
+            <li>选择执行路线和 provider</li>
+            <li>解析 <code>sessionRef</code></li>
+            <li>调用 API client 或 MCP tool</li>
+            <li>处理循环、等待、超时、中断、重试</li>
+          </ul>
+        </div>
+        <div class="lane">
+          <h3>provider / connector</h3>
+          <ul>
+            <li>执行真实 Instagram 能力</li>
+            <li>校验 provider 专属限制</li>
+            <li>返回结构化成功、失败或降级结果</li>
+            <li>不承载业务编排</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="layers">
+      <div class="section-head">
+        <h2>分层结构</h2>
+        <p>分层的目标是隔离变化：业务规则、底座适配、通用接口和具体执行 provider 各自独立演进。</p>
+      </div>
+
+      <div class="layers">
+        <div class="layer">
+          <div class="layer-label">业务 skill/tool 层</div>
+          <div class="layer-items">
+            <div class="module"><strong>instagram-warmup-orchestrator</strong><span>总编排，生成今日养号计划</span></div>
+            <div class="module"><strong>instagram-profile-setup</strong><span>生成资料方案和编辑计划</span></div>
+            <div class="module"><strong>instagram-video-interaction</strong><span>生成互动计划、判断和评论</span></div>
+            <div class="module"><strong>instagram-content-publish</strong><span>生成草稿、发布计划、状态查询计划</span></div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-label">底座适配层</div>
+          <div class="layer-items">
+            <div class="module"><strong>instagram</strong><span>声明 Cordis <code>ctx.instagram</code></span></div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-label">通用能力接口层</div>
+          <div class="layer-items">
+            <div class="module"><strong>instagram-core</strong><span>定义接口、类型、branded id 构造函数</span></div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-label">provider/client 实现层</div>
+          <div class="layer-items">
+            <div class="module"><strong>instagram-aiograpi-rest</strong><span>第一期 API provider</span></div>
+            <div class="module"><strong>instagram-official-api</strong><span>官方 API 预留路线</span></div>
+            <div class="module"><strong>instagram-connector</strong><span>MCP 移动端操作兜底</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="routes">
+      <div class="section-head">
+        <h2>两条执行路线</h2>
+        <p>API provider 路线覆盖资料和发布的第一期主路径；MCP connector 路线先覆盖视频互动，也作为 API 不可用时的兜底执行方式。</p>
+      </div>
+
+      <div class="flow-board">
+        <article class="route">
+          <h3>API provider 路线</h3>
+          <div class="route-steps">
+            <div class="step">
+              <div class="step-index">1</div>
+              <div><p class="step-title">业务 skill 输出计划</p><p class="step-note">资料编辑计划、发布计划、状态查询计划。</p></div>
+            </div>
+            <div class="step">
+              <div class="step-index">2</div>
+              <div><p class="step-title">agent 服务读取计划</p><p class="step-note">选择 provider，解析 <code>sessionRef</code>，补齐执行参数。</p></div>
+            </div>
+            <div class="step">
+              <div class="step-index">3</div>
+              <div><p class="step-title"><code>instagram-core</code> 统一接口</p><p class="step-note">TS 执行层通过类型和 client 契约约束请求。</p></div>
+            </div>
+            <div class="step">
+              <div class="step-index">4</div>
+              <div><p class="step-title">provider 执行</p><p class="step-note"><code>instagram-aiograpi-rest</code> 或后续 <code>instagram-official-api</code>。</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="route">
+          <h3>MCP connector 路线</h3>
+          <div class="route-steps">
+            <div class="step">
+              <div class="step-index">1</div>
+              <div><p class="step-title">互动 skill 输出计划和判断规则</p><p class="step-note">关键词、互动上限、停留时间、评论风格。</p></div>
+            </div>
+            <div class="step">
+              <div class="step-index">2</div>
+              <div><p class="step-title">agent 服务执行循环</p><p class="step-note">半小时 runner、等待和中断都由 agent 服务负责。</p></div>
+            </div>
+            <div class="step">
+              <div class="step-index">3</div>
+              <div><p class="step-title">调用 MCP tools</p><p class="step-note">搜索、采集、点赞、评论、下一条由 connector 暴露。</p></div>
+            </div>
+            <div class="step">
+              <div class="step-index">4</div>
+              <div><p class="step-title">回传日志并汇总</p><p class="step-note">skill 只汇总真实执行日志，不伪造动作结果。</p></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="session-ref">
+      <div class="section-head">
+        <h2>sessionRef：统一但不固定结构</h2>
+        <p><code>sessionRef</code> 必要性来自 provider 差异：aiograpi-rest、官方 API、移动端 runtime 对登录态的真实需求完全不同，业务 skill 不应该理解这些内部结构。</p>
+      </div>
+
+      <div class="session-map">
+        <div class="big-token">
+          <strong>sessionRef</strong>
+          <span>稳定、不含敏感信息、对业务 skill 只是 string</span>
+        </div>
+        <div class="store">
+          <div class="db-box">
+            <strong>SQLite registry</strong>
+            <span>根据 <code>sessionRef</code> 找到 account、provider、session 类型和状态。</span>
+          </div>
+          <div class="db-box">
+            <strong>provider 专属表</strong>
+            <span>每个 provider 保存自己的真实字段，避免把差异泄漏给业务层。</span>
+          </div>
+        </div>
+        <div class="provider-stack">
+          <div class="db-box">
+            <strong>aiograpi-rest</strong>
+            <span>解析为 aiograpi session id 和服务地址。</span>
+          </div>
+          <div class="db-box">
+            <strong>official-api</strong>
+            <span>解析为 access token、IG user id、scope、过期时间。</span>
+          </div>
+          <div class="db-box">
+            <strong>connector</strong>
+            <span>解析为 ADB serial、runtime host、artifact dir。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:18px">
+        <div class="card">
+          <h3>为什么需要</h3>
+          <p>同一个账号可能走不同 provider；统一引用能让 skill 输出稳定，执行层按需解析。</p>
+        </div>
+        <div class="card">
+          <h3>安全边界</h3>
+          <p><code>sessionRef</code> 不包含 token、cookie、密码或 ADB 细节，日志也只记录引用和解析状态。</p>
+        </div>
+        <div class="card">
+          <h3>扩展方式</h3>
+          <p>第一版用 SQLite，后续迁移到 Postgres、Secret Manager 或远端 session 服务时保持接口稳定。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="connector">
+      <div class="section-head">
+        <h2>connector 兜底策略</h2>
+        <p>移动端操作优先使用 XML 组件节点，因为它更可解释、更稳定；截图坐标只在 XML 失败后单次兜底。</p>
+      </div>
+
+      <div class="fallback" role="img" aria-label="connector 两级兜底执行流程">
+        <div class="step">
+          <div class="step-index">1</div>
+          <div>
+            <p class="step-title">XML 快照</p>
+            <p class="step-note">通过 UI XML selector 定位目标节点。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-index">2</div>
+          <div>
+            <p class="step-title">有限次重试</p>
+            <p class="step-note">节点定位或点击失败时重试，记录 attempts。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-index">3</div>
+          <div>
+            <p class="step-title">截图坐标一次</p>
+            <p class="step-note">调用模型或坐标识别服务推测点击位置，只执行一次。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-index">4</div>
+          <div>
+            <p class="step-title">降级结果</p>
+            <p class="step-note">仍失败则返回 <code>DEGRADED</code> 和原因，不继续循环尝试。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="eval">
+      <div class="section-head">
+        <h2>结构化日志、benchmark 与 agent eval</h2>
+        <p>计划型 skill 的价值不只是“不执行”，还在于把 agent 的决策链路变成可记录、可回放、可评分的数据。</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>计划字段稳定</h3>
+          <p>每个计划包含目标动作、目标工具、参数草案、审批状态和日志字段，便于跨 provider 对比。</p>
+        </div>
+        <div class="card">
+          <h3>执行结果真实</h3>
+          <p>skill 不伪造发布、点赞、评论结果；agent 服务写入 provider 或 MCP tool 返回的真实状态。</p>
+        </div>
+        <div class="card">
+          <h3>评测路径清晰</h3>
+          <p>benchmark 可检查计划是否合理，agent eval 可检查 agent 是否按计划选择工具、处理失败并记录结果。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="order">
+      <div class="section-head">
+        <h2>推荐开发顺序</h2>
+        <p>先稳定接口和执行通道，再实现业务 skill，最后接入总编排和官方 API 后续路线。</p>
+      </div>
+
+      <div class="timeline" aria-label="推荐开发顺序">
+        <div class="phase"><b>P0</b><strong>instagram-core</strong><span>公共接口和类型先稳定。</span></div>
+        <div class="phase"><b>P1</b><strong>instagram</strong><span>接入 deepseek-harness，注入 ctx.instagram。</span></div>
+        <div class="phase"><b>P2</b><strong>instagram-aiograpi-rest</strong><span>资料和发布路线的第一期 provider。</span></div>
+        <div class="phase"><b>P3</b><strong>instagram-connector</strong><span>视频互动依赖 MCP 移动端能力。</span></div>
+        <div class="phase"><b>P4</b><strong>instagram-video-interaction</strong><span>在 connector 信号基础上做互动判断。</span></div>
+        <div class="phase"><b>P5</b><strong>instagram-profile-setup</strong><span>落地资料方案和编辑计划。</span></div>
+        <div class="phase"><b>P6</b><strong>instagram-content-publish</strong><span>落地草稿、发布计划和状态查询计划。</span></div>
+        <div class="phase"><b>P7</b><strong>instagram-warmup-orchestrator</strong><span>具体能力稳定后做总编排。</span></div>
+        <div class="phase"><b>P8</b><strong>instagram-official-api</strong><span>第一期不实现，后续专业账号路线再接。</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="callout">
+        <p><strong>汇报结论：</strong>当前设计的核心取舍是“业务 skill 计划化、执行能力 provider 化、跨底座连接协议化”。这能先跑通 TS 插件底座和 MCP connector 路线，同时为 Python agent 通过 protocol 层复用同一套能力留下清晰落点。</p>
+      </div>
+    </section>
+
+    <p class="footer-note">来源：docs/plans/Instagram养号skills包设计总览.md。本文档为汇报型 HTML 摘要，保留关键架构和决策，不展开各包内部实现细节。</p>
+  </main>
+</body>
+</html>

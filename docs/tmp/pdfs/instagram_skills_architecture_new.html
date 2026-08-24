@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Instagram养号skills架构原型</title>
+  <style>
+    :root {
+      --paper: #f4f6f3;
+      --ink: #16212e;
+      --muted: #647083;
+      --line: #cfd8df;
+      --panel: #ffffff;
+      --panel-soft: #f9fbfa;
+      --teal: #0b766f;
+      --teal-soft: #dff3ef;
+      --blue: #1f5faa;
+      --blue-soft: #e2ecf8;
+      --amber: #a66300;
+      --amber-soft: #fff0cf;
+      --red: #b3334c;
+      --red-soft: #ffe5eb;
+      --violet: #6040a0;
+      --violet-soft: #ece6fb;
+      --shadow: 0 18px 42px rgba(24, 36, 51, 0.08);
+      --radius: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #101820;
+        --ink: #edf3f7;
+        --muted: #a7b4c3;
+        --line: #344252;
+        --panel: #17212c;
+        --panel-soft: #1c2935;
+        --teal: #62d0c5;
+        --teal-soft: #173b38;
+        --blue: #8ab8ff;
+        --blue-soft: #1b314d;
+        --amber: #f0bb62;
+        --amber-soft: #3c2d14;
+        --red: #ff92a7;
+        --red-soft: #42212a;
+        --violet: #c4adff;
+        --violet-soft: #2c2542;
+        --shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(22, 33, 46, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(22, 33, 46, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "DengXian", Arial, sans-serif;
+      line-height: 1.62;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .page {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 34px 28px 64px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      padding: 24px 0 26px;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      color: var(--ink);
+      line-height: 1.25;
+      text-wrap: balance;
+      overflow-wrap: anywhere;
+    }
+
+    h1 {
+      font-size: clamp(30px, 4vw, 46px);
+      font-weight: 800;
+    }
+
+    h1 span {
+      display: inline;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    h4 {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .intro {
+      max-width: 840px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .source-pill,
+    .section-pill,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow-wrap: anywhere;
+    }
+
+    .section {
+      margin-top: 34px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .blueprint {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.9fr) 42px minmax(260px, 1fr) 42px minmax(360px, 1.35fr) 42px minmax(260px, 0.95fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .box {
+      min-height: 128px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .box h3 {
+      margin-bottom: 10px;
+    }
+
+    .box li,
+    .box p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .orchestrator {
+      border-color: color-mix(in srgb, var(--blue) 46%, var(--line));
+      background: linear-gradient(180deg, var(--panel), var(--blue-soft));
+    }
+
+    .result {
+      border-color: color-mix(in srgb, var(--teal) 42%, var(--line));
+      background: linear-gradient(180deg, var(--panel), var(--teal-soft));
+    }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .skill-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .skill-node {
+      padding: 14px 15px;
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--teal);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .skill-node.interaction {
+      border-left-color: var(--amber);
+    }
+
+    .skill-node.publish {
+      border-left-color: var(--red);
+    }
+
+    .skill-node strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .skill-node span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .list li {
+      margin: 5px 0;
+    }
+
+    .orchestration {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.8fr) minmax(360px, 1.5fr) minmax(240px, 1fr);
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--blue);
+      flex: 0 0 auto;
+    }
+
+    .dot.teal {
+      background: var(--teal);
+    }
+
+    .dot.amber {
+      background: var(--amber);
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      color: var(--ink);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .step-arrow {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .skill-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .tag.profile {
+      color: var(--teal);
+      background: var(--teal-soft);
+      border-color: color-mix(in srgb, var(--teal) 35%, var(--line));
+    }
+
+    .tag.interaction {
+      color: var(--amber);
+      background: var(--amber-soft);
+      border-color: color-mix(in srgb, var(--amber) 35%, var(--line));
+    }
+
+    .tag.publish {
+      color: var(--red);
+      background: var(--red-soft);
+      border-color: color-mix(in srgb, var(--red) 35%, var(--line));
+    }
+
+    .definition {
+      min-height: 58px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .io-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .mini h4 {
+      margin-bottom: 8px;
+    }
+
+    .mini li {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .tool {
+      min-height: 88px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .tool strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .tool span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tech-matrix {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .tech-matrix th,
+    .tech-matrix td {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    .tech-matrix th {
+      background: var(--panel-soft);
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .tech-matrix tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .route-name {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 13px;
+      background: var(--violet-soft);
+      color: var(--violet);
+    }
+
+    .route-name.safe {
+      background: var(--teal-soft);
+      color: var(--teal);
+    }
+
+    .route-name.fallback {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+    }
+
+    @media (max-width: 1120px) {
+      .blueprint,
+      .orchestration,
+      .skill-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow {
+        min-height: 22px;
+        transform: rotate(90deg);
+      }
+
+      .tool-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        padding: 22px 16px 40px;
+      }
+
+      .hero,
+      .io-grid,
+      .tool-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .source-pill,
+      .section-pill,
+      .tag {
+        white-space: normal;
+      }
+
+      h1 span {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <h1><span>Instagram养号skills</span><span>架构原型</span></h1>
+        <p class="intro">根据 <strong>海外社媒运营流程-12.31.pdf</strong>：一、社媒六大平台介绍及养号流程，整理 Instagram 养号 skills 的初版方案。</p>
+      </div>
+      <span class="source-pill">来源：my_work/Instagram养号skills.md</span>
+    </header>
+
+    <section class="section" aria-labelledby="overview-title">
+      <div class="section-head">
+        <h2 id="overview-title">总体架构</h2>
+        <span class="section-pill">输入 → 养号skill → 子skill → 输出</span>
+      </div>
+
+      <div class="blueprint">
+        <div class="box">
+          <h3>输入</h3>
+          <ul class="list">
+            <li>账号id</li>
+            <li>注册日期</li>
+            <li>当前日期</li>
+            <li>access token/session之类支持api调用的标识信息</li>
+            <li>语言要求</li>
+            <li>素材库路径</li>
+          </ul>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="box orchestrator">
+          <h3>养号skill</h3>
+          <p>根据账号注册日期，识别养号阶段，选择具体动作。</p>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="skill-stack">
+          <div class="skill-node profile">
+            <strong>账号基础建设skill</strong>
+            <span>根据要求和素材生成头像、背景图、名字、简介</span>
+          </div>
+          <div class="skill-node interaction">
+            <strong>每日自动互动同类型视频skill</strong>
+            <span>关键词搜索、观看、AI理解视频、点赞、生成评论、写入日志</span>
+          </div>
+          <div class="skill-node publish">
+            <strong>发布内容skill</strong>
+            <span>生成文字、图片、视频并发布 post / stories / reels</span>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="box result">
+          <h3>输出</h3>
+          <ul class="list">
+            <li>日期</li>
+            <li>当前阶段</li>
+            <li>今日任务列表</li>
+            <li>调用skill</li>
+            <li>每个任务的执行结果</li>
+            <li>执行日志</li>
+            <li>下一次建议执行时间</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="orchestrator-title">
+      <div class="section-head">
+        <h2 id="orchestrator-title">总编排能力</h2>
+        <span class="section-pill">养号skill</span>
+      </div>
+
+      <div class="orchestration">
+        <div class="panel">
+          <div class="panel-title">
+            <span class="dot"></span>
+            <h3>定位</h3>
+          </div>
+          <p class="muted">对应<strong>原始需求（5）</strong>：养号</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span class="dot teal"></span>
+            <h3>流程</h3>
+          </div>
+          <div class="flow">
+            <span class="step">根据注册日期识别养号阶段</span>
+            <span class="step-arrow">→</span>
+            <span class="step">生成今日任务计划</span>
+            <span class="step-arrow">→</span>
+            <span class="step">调用子skill</span>
+            <span class="step-arrow">→</span>
+            <span class="step">执行</span>
+            <span class="step-arrow">→</span>
+            <span class="step">输出结果</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">
+            <span class="dot amber"></span>
+            <h3>能力</h3>
+          </div>
+          <ul class="list">
+            <li>账号基础建设skill</li>
+            <li>每日自动互动同类型视频skill</li>
+            <li>发布内容skill</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="skills-title">
+      <div class="section-head">
+        <h2 id="skills-title">具体能力</h2>
+        <span class="section-pill">三个子 skill 的职责、输入输出与流程</span>
+      </div>
+
+      <div class="skill-grid">
+        <article class="skill-card">
+          <span class="tag profile">账号基础建设skill</span>
+          <h3>个人信息维护</h3>
+          <p class="definition">对应<strong>原始需求2.个人信息维护</strong>。根据要求和素材生成头像、背景图、名字、简介。</p>
+
+          <div class="io-grid">
+            <div class="mini">
+              <h4>输入</h4>
+              <ul class="list">
+                <li>账号id</li>
+                <li>access token/session之类支持api调用的标识信息</li>
+                <li>可参考图片</li>
+                <li>主页个人名字约束提示词</li>
+                <li>个人简介约束提示词</li>
+              </ul>
+            </div>
+            <div class="mini">
+              <h4>输出</h4>
+              <ul class="list">
+                <li>头像</li>
+                <li>名字</li>
+                <li>简介</li>
+                <li>api调用结果</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mini">
+            <h4>流程</h4>
+            <div class="flow">
+              <span class="step">生成账户名字</span>
+              <span class="step-arrow">→</span>
+              <span class="step">生成个人简介</span>
+              <span class="step-arrow">→</span>
+              <span class="step">生成头像</span>
+              <span class="step-arrow">→</span>
+              <span class="step">生成背景图</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="skill-card">
+          <span class="tag interaction">每日自动互动同类型视频skill</span>
+          <h3>养号流程①1-5天</h3>
+          <p class="definition">每天在各平台刷同类型短视频半小时并点赞、评论互动，避免系统识别人机号或营销号进行限流。</p>
+
+          <div class="io-grid">
+            <div class="mini">
+              <h4>输入</h4>
+              <ul class="list">
+                <li>账号id</li>
+                <li>关键词列表</li>
+                <li>最多点赞数</li>
+                <li>最多评论数</li>
+                <li>评论风格提示词</li>
+                <li>最小停留时间</li>
+                <li>最大停留时间</li>
+              </ul>
+            </div>
+            <div class="mini">
+              <h4>输出</h4>
+              <ul class="list">
+                <li>日期</li>
+                <li>运行时长</li>
+                <li>观看数</li>
+                <li>点赞数</li>
+                <li>评论数</li>
+                <li>执行日志</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mini">
+            <h4>流程</h4>
+            <div class="flow">
+              <span class="step">关键词搜索</span>
+              <span class="step-arrow">→</span>
+              <span class="step">观看</span>
+              <span class="step-arrow">→</span>
+              <span class="step">AI理解视频</span>
+              <span class="step-arrow">→</span>
+              <span class="step">点赞</span>
+              <span class="step-arrow">→</span>
+              <span class="step">生成评论</span>
+              <span class="step-arrow">→</span>
+              <span class="step">写入日志</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="skill-card">
+          <span class="tag publish">发布内容skill</span>
+          <h3>post / stories / reels</h3>
+          <p class="definition">对应<strong>原始需求（5）②、③</strong>：每天发布1-2篇帖子 | 利用stories、reels等。</p>
+
+          <div class="io-grid">
+            <div class="mini">
+              <h4>输入</h4>
+              <ul class="list">
+                <li>账号id</li>
+                <li>发布类型（post/stories/reels）</li>
+                <li>参考素材</li>
+                <li>产品信息说明</li>
+                <li>目标市场语言</li>
+                <li>发布时间</li>
+                <li>是否自动生成图片/视频</li>
+              </ul>
+            </div>
+            <div class="mini">
+              <h4>输出</h4>
+              <ul class="list">
+                <li>结果：状态、时间、失败原因、post id</li>
+                <li>生成内容：类型、tag、正文、图片/视频</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mini">
+            <h4>流程</h4>
+            <div class="flow">
+              <span class="step">生成亮点说明</span>
+              <span class="step-arrow">→</span>
+              <span class="step">生成内容</span>
+              <span class="step-arrow">→</span>
+              <span class="step">内容检查</span>
+              <span class="step-arrow">→</span>
+              <span class="step">人工审批</span>
+              <span class="step-arrow">→</span>
+              <span class="step">发布</span>
+              <span class="step-arrow">→</span>
+              <span class="step">结果回写</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="tools-title">
+      <div class="section-head">
+        <h2 id="tools-title">工具层能力</h2>
+        <span class="section-pill">各 skill 暴露的 tool</span>
+      </div>
+
+      <div class="tool-grid">
+        <div class="tool">
+          <strong>个人资料编辑tool</strong>
+          <span>输入：头像、名字、简介；输出：结果状态</span>
+        </div>
+        <div class="tool">
+          <strong>视频搜索tool</strong>
+          <span>输入：关键词；输出：url</span>
+        </div>
+        <div class="tool">
+          <strong>视频识别tool</strong>
+          <span>输入：url、目标说明；输出：是否符合目标、是否点赞、是否评论</span>
+        </div>
+        <div class="tool">
+          <strong>点赞tool</strong>
+          <span>输入：无；输出：结果状态、时间</span>
+        </div>
+        <div class="tool">
+          <strong>评论tool</strong>
+          <span>输入：评论内容；输出：结果状态、时间</span>
+        </div>
+        <div class="tool">
+          <strong>Post生成 Tool</strong>
+          <span>发布内容skill能力</span>
+        </div>
+        <div class="tool">
+          <strong>Stories生成 Tool</strong>
+          <span>发布内容skill能力</span>
+        </div>
+        <div class="tool">
+          <strong>Reels生成Tool / 发布Tool / 发布状态查询Tool</strong>
+          <span>发布内容skill能力</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="tech-title">
+      <div class="section-head">
+        <h2 id="tech-title">技术路线层</h2>
+        <span class="section-pill">所有技术方案统一归入本层</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="tech-matrix">
+          <thead>
+            <tr>
+              <th>适用 skill</th>
+              <th>技术方案</th>
+              <th>文档说明</th>
+              <th>定位</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>账号基础建设skill</td>
+              <td><span class="route-name">aiograpi</span></td>
+              <td><a href="https://github.com/subzeroid/aiograpi">aiograpi</a> 是直接调用 Instagram Private API 的异步 Python SDK，部署相对简单，只需要在 Python 环境中安装依赖即可，适合需要直接控制 SDK、调试新接口或快速补能力的场景。优势是能力覆盖最完整、更新通常更快；缺点是上层系统需要自己处理 Session、Proxy、异常恢复以及 Tool 封装。</td>
+              <td>SDK 直连能力</td>
+            </tr>
+            <tr>
+              <td>账号基础建设skill</td>
+              <td><span class="route-name">aiograpi-rest</span></td>
+              <td><a href="https://github.com/subzeroid/aiograpi-rest">aiograpi-rest</a> 是把 aiograpi 封装成 HTTP REST 服务的项目，本质上仍然调用 Instagram Private API，但对外提供统一的 REST/OpenAPI 接口。更适合 Agent、Skill、MCP、Java/Go/Node 后端或多服务架构。支持 Docker 部署、开箱即用。</td>
+              <td>能力验证优先方案</td>
+            </tr>
+            <tr>
+              <td>账号基础建设skill</td>
+              <td><span class="route-name fallback">Instagram connector</span></td>
+              <td>api不可用时的兜底。</td>
+              <td>兜底</td>
+            </tr>
+            <tr>
+              <td>每日自动互动同类型视频skill</td>
+              <td><span class="route-name fallback">Instagram connector + Host Runtime</span></td>
+              <td>编写Instagram connector，实现操作组件节点完成指定动作（搜索reels、点赞、评论、滑动等），调用组件节点失败时，使用截图+识别坐标兜底。</td>
+              <td>组件节点操作与截图识别兜底</td>
+            </tr>
+            <tr>
+              <td>每日自动互动同类型视频skill</td>
+              <td><span class="route-name fallback">Android Accessibility Script Pack 脚本</span></td>
+              <td><a href="https://github.com/ven-coder/assists">ven-coder/assists</a>：封装Accessibility，提供更高层API，可以通过MCP暴露能力。</td>
+              <td>移动端自动化脚本</td>
+            </tr>
+            <tr>
+              <td>每日自动互动同类型视频skill</td>
+              <td><span class="route-name fallback">Playwright 脚本</span></td>
+              <td><a href="https://github.com/vrajdesai78/instagram-skill">vrajdesai78/instagram-skill</a>：提供关键词搜索、<strong>reels搜索</strong>传参hashtag和tab（top/recent/clips）。</td>
+              <td>Web 自动化脚本</td>
+            </tr>
+            <tr>
+              <td>发布内容skill</td>
+              <td><span class="route-name safe">官方API</span></td>
+              <td>最安全、风险最低。但是只支持专业账号。</td>
+              <td>优先发布路线</td>
+            </tr>
+            <tr>
+              <td>发布内容skill</td>
+              <td><span class="route-name">aiograpi-rest</span></td>
+              <td>非官方API，支持普通账号。可以作为非专业账号的兜底方案。</td>
+              <td>普通账号兜底方案</td>
+            </tr>
+            <tr>
+              <td>发布内容skill</td>
+              <td><span class="route-name fallback">Instagram connector</span></td>
+              <td>api失效时的兜底。</td>
+              <td>兜底</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

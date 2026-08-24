@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Instagram养号skills</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm 18mm 20mm 18mm;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      color: #1f2933;
+      font-family: "Microsoft YaHei", "DengXian", "SimHei", sans-serif;
+      font-size: 11.2pt;
+      line-height: 1.72;
+      background: #ffffff;
+    }
+    h1, h2, h3, h4 {
+      color: #111827;
+      line-height: 1.35;
+      page-break-after: avoid;
+      font-weight: 700;
+    }
+    h1 {
+      font-size: 24pt;
+      padding-bottom: 8pt;
+      margin: 0 0 18pt;
+      border-bottom: 2pt solid #111827;
+    }
+    h2 {
+      font-size: 18pt;
+      margin: 24pt 0 10pt;
+      padding-bottom: 4pt;
+      border-bottom: 1pt solid #d8dee9;
+    }
+    h3 {
+      font-size: 14.5pt;
+      margin: 18pt 0 8pt;
+    }
+    h4 {
+      font-size: 12pt;
+      margin: 14pt 0 6pt;
+    }
+    h5 {
+      font-size: 11.4pt;
+      margin: 12pt 0 5pt;
+      color: #111827;
+    }
+    p {
+      margin: 0 0 8pt;
+    }
+    ul {
+      margin: 0 0 8pt 0;
+      padding-left: 18pt;
+    }
+    li {
+      margin: 2pt 0;
+      padding-left: 1pt;
+    }
+    li ul {
+      margin-top: 2pt;
+      margin-bottom: 2pt;
+    }
+    a {
+      color: #0f5ea8;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+    strong {
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+<h1>Instagram养号skills</h1>
+<h2>目录</h2>
+<ul>
+<li><a href="#总编排能力">总编排能力</a></li>
+<ul>
+<li><a href="#养号skill">养号skill</a></li>
+</ul>
+<li><a href="#具体能力">具体能力</a></li>
+<ul>
+<li><a href="#每日自动互动同类型视频skill">每日自动互动同类型视频skill</a></li>
+<li><a href="#发布内容skill">发布内容skill</a></li>
+</ul>
+</ul>
+<h1>说明</h1>
+<p>根据 <strong>海外社媒运营流程-12.31.pdf</strong>：一、社媒六大平台介绍及养号流程  整理了Instagram养号skills的初版方案</p>
+<h2>总编排能力</h2>
+<h3>养号skill</h3>
+<h4>定位</h4>
+<p>对应<strong>原始需求（5）</strong>：养号</p>
+<h4>职责</h4>
+<p>根据账号注册日期，识别养号阶段，选择具体动作</p>
+<h4>输入</h4>
+<ul>
+<li>账号id</li>
+<li>注册日期</li>
+<li>当前日期</li>
+<li>access token</li>
+<li>目标市场</li>
+<li>素材库路径</li>
+</ul>
+<h4>输出</h4>
+<ul>
+<li>日期</li>
+<li>当前阶段</li>
+<li>今日任务列表</li>
+<li>调用skill</li>
+<li>每个任务的执行结果</li>
+<li>执行日志（日志内容根据阶段对应的skill而定）</li>
+<li>下一次建议执行时间</li>
+</ul>
+<h4>流程</h4>
+<ul>
+<li>根据注册日期识别养号阶段</li>
+<li>生成今日任务计划</li>
+<li>调用子skill</li>
+<li>执行</li>
+<li>输出结果</li>
+</ul>
+<h4>能力</h4>
+<ul>
+<li>账号基础建设skill</li>
+<li>每日自动互动同类型视频skill</li>
+<li>发布内容skill</li>
+</ul>
+<h2>具体能力</h2>
+<h3>每日自动互动同类型视频skill</h3>
+<h4>定位</h4>
+<p>对应<strong>原始需求（5）养号流程①1-5天</strong>：每天在各平台刷同类型短视频半小时并点赞、评论互动，避免系统识别人机号或营销号进行限流。</p>
+<h4>职责</h4>
+<ul>
+<li>模拟真人浏览行为</li>
+</ul>
+<ul>
+<li>模拟轻量互动行为</li>
+</ul>
+<ul>
+<li>控制行为节奏</li>
+</ul>
+<ul>
+<li>记录账号行为历史</li>
+</ul>
+<h4>输入</h4>
+<ul>
+<li>账号id</li>
+<li>关键词列表</li>
+<li>最多点赞数</li>
+<li>最多评论数</li>
+<li>评论风格提示词</li>
+<li>最小停留时间</li>
+<li>最大停留时间</li>
+</ul>
+<h4>输出</h4>
+<ul>
+<li>日期</li>
+<li>运行时长</li>
+<li>观看数</li>
+<li>点赞数</li>
+<li>评论数</li>
+<li>执行日志：</li>
+<ul>
+<li>类型（观看、点赞、评论）</li>
+<li>视频标题</li>
+<li>视频url</li>
+<li>评论内容</li>
+<li>停留时间</li>
+<li>动作结果</li>
+</ul>
+</ul>
+<h4>流程</h4>
+<ul>
+<li>关键词搜索</li>
+<li>观看</li>
+<li>AI理解视频（是否符合目标、是否点赞、是否评论）</li>
+<li>点赞</li>
+<li>生成评论</li>
+<li>写入日志</li>
+</ul>
+<h4>能力</h4>
+<ul>
+<li>视频搜索tool</li>
+<ul>
+<li>输入：关键词</li>
+<li>输出：url</li>
+</ul>
+<li>视频识别tool</li>
+<ul>
+<li>输入：url、目标说明</li>
+<li>输出：是否符合目标、是否点赞、是否评论</li>
+</ul>
+<li>点赞tool</li>
+<ul>
+<li>输入：无</li>
+<li>输出：结果状态、时间</li>
+</ul>
+<li>评论tool：</li>
+<ul>
+<li>输入：评论内容</li>
+<li>输出：结果状态、时间</li>
+</ul>
+</ul>
+<h4>技术方案</h4>
+<h4>Android Accessibility Script Pack 脚本</h4>
+<p><a href="https://github.com/ven-coder/assists">ven-coder/assists: 🔥Android无障碍服务（AccessibilityService）开发框架，Android自动化脚本框架，快速开发复杂自动化任务、远程协助、监听等</a>：封装Accessibility，提供更高层API，可以通过MCP暴露能力</p>
+<h4>Playwright 脚本</h4>
+<p><a href="https://github.com/vrajdesai78/instagram-skill">vrajdesai78/instagram-skill</a>：提供关键词搜索、<strong>reels搜索</strong>传参hashtag和tab（top/recent/clips）</p>
+<h3>发布内容skill</h3>
+<h4>定位</h4>
+<p>对应<strong>原始需求（5）②、③</strong>：每天发布1-2篇帖子  |  利用stories、reels等</p>
+<h4>职责</h4>
+<p>根据产品素材、历史内容生成文字、图片、视频并发布post/stories/reels</p>
+<h4>输入</h4>
+<ul>
+<li>账号id</li>
+<li>发布类型（post/stories/reels）</li>
+<li>参考素材</li>
+<li>产品信息说明</li>
+<li>目标市场语言</li>
+<li>发布时间</li>
+<li>是否自动生成图片/视频</li>
+</ul>
+<h4>输出</h4>
+<ul>
+<li>结果：</li>
+<ul>
+<li>状态</li>
+<li>时间</li>
+<li>失败原因</li>
+<li>post id</li>
+</ul>
+<li>生成内容：</li>
+<ul>
+<li>类型（post/stories/reels）</li>
+<li>tag</li>
+<li>正文</li>
+<li>图片/视频</li>
+</ul>
+</ul>
+<h4>流程</h4>
+<ul>
+<li>根据素材、信息生成基本亮点说明（类型、使用场景、优点）</li>
+<li>根据发布类型生成不同的内容：</li>
+<ul>
+<li>post：更详细的亮点说明+图片</li>
+<li>stories：简短产品展示（图片、短视频、文字）</li>
+<li>reels：短视频</li>
+</ul>
+<li>内容检查（是否包含品牌定位、商品说明、目标市场语言习惯，不包含敏感信息）</li>
+<li>人工审批</li>
+<li>发布</li>
+<li>结果回写</li>
+</ul>
+<h4>能力</h4>
+<ul>
+<li>Post生成 Tool</li>
+<li>Stories生成 Tool</li>
+<li>Reels生成Tool</li>
+<li>发布Tool</li>
+<li>发布状态查询Tool</li>
+</ul>
+</body>
+</html>
