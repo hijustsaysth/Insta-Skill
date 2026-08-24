@@ -1,0 +1,16 @@
+export const AIOGRAPI_REST_ROUTES = {
+  account: "/account",
+  accountPicture: "/account/picture",
+  searchReels: "/search/reels",
+  media: "/media",
+  mediaLike: "/media/like",
+  mediaComment: "/media/comment",
+  photoUpload: "/photo/upload",
+  photoUploadByUrl: "/photo/upload/by/url",
+  videoUpload: "/video/upload",
+  videoUploadByUrl: "/video/upload/by/url",
+  clipUpload: "/clip/upload",
+  clipUploadByUrl: "/clip/upload/by/url",
+  storyUpload: "/story/upload",
+  storyUploadByUrl: "/story/upload/by/url"
+} as const;

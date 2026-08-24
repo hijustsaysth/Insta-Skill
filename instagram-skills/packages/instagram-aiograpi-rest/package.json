@@ -1,0 +1,33 @@
+{
+  "name": "@instagram-skills/instagram-aiograpi-rest",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "pnpm typecheck && pnpm build && node --test test/*.test.mjs",
+    "smoke:local": "node test/smoke.local.mjs"
+  },
+  "dependencies": {
+    "@instagram-skills/instagram-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@instagram-skills/instagram-cordis": "workspace:*"
+  },
+  "devDependencies": {
+    "@instagram-skills/instagram-cordis": "workspace:*",
+    "typescript": "^5.5.4"
+  }
+}

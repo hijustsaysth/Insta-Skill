@@ -1,0 +1,18 @@
+services:
+  aiograpi-rest:
+    image: subzeroid/aiograpi-rest:6.0.0
+    container_name: aiograpi-rest
+
+    restart: unless-stopped
+
+    ports:
+      - "8005:8000"
+
+    environment:
+      AIOGRAPI_REST_DB_PATH: /data/db.json
+
+    volumes:
+      - aiograpi_data:/data
+
+volumes:
+  aiograpi_data:

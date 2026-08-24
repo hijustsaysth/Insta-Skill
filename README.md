@@ -2,7 +2,7 @@
 
 ## 项目目标
 
-本项目用于设计并实现一组 Instagram 养号相关 skills 和 provider 能力。
+本项目用于设计并实现一组 Instagram 养号相关 skills、provider/client 和 connector 能力。
 
 核心目标是把业务能力拆成可复用的包结构，同时兼容：
 
@@ -14,21 +14,28 @@
 
 ## 当前状态
 
-当前仓库处于方案沉淀和实现准备阶段。
+当前仓库处于方案沉淀和第一版工程实现阶段。
 
 已完成：
 
 * Instagram 养号 skills 包设计总览
 * 各包设计与实现方案
-* `sessionRef` 设计与实现方案
+* `sessionRef` 设计与 SQLite 管理机制
 * 三天实现计划
 * 汇报用 HTML 方案页面
+* `instagram-skills` monorepo 基础架构
+* 10 个 TS package 骨架
+* 4 个业务 skill 包的 `SKILL.md` 占位
+* `instagram-core` 通用接口和测试
+* `instagram-cordis` Cordis 适配层和测试
+* `instagram-session-store-sqlite` sessionRef registry、provider session 表、结构化解析日志和测试
+* `instagram-aiograpi-rest` provider/client，对齐本地 `aiograpi-rest 6.0.0` OpenAPI，并通过 mock 测试和 local smoke
+* `instagram-official-api` 已调整为基于 Zernio API 的官方发布 provider 方案
 
 待实现：
 
-* monorepo 工程结构
-* TS packages
-* MCP connector server
+* `instagram-official-api` Zernio provider 代码
+* `instagram-connector` MCP server 真实 tools
 * 业务 skill tools
 * agent 服务执行层集成
 * 结构化日志、benchmark 和 agent eval 基础能力
@@ -51,10 +58,13 @@
   └── instagram-content-publish
 
 底座适配层
-  └── instagram
+  └── instagram-cordis
 
 通用能力接口层
   └── instagram-core
+
+session 存储层
+  └── instagram-session-store-sqlite
 
 provider/client 实现层
   ├── instagram-aiograpi-rest
@@ -70,10 +80,14 @@ provider/client 实现层
 业务 skill 生成计划
   → agent 服务读取计划
   → agent 服务解析 sessionRef
-  → instagram-core / ctx.instagram
+  → InstagramClient / ctx.instagram
   → instagram-aiograpi-rest 或 instagram-official-api
   → 写入结构化日志
 ```
+
+`instagram-aiograpi-rest` 用于第一期普通账号 / 私有 API 路线。
+
+`instagram-official-api` 保留包名，但定位已改为通过 Zernio API 使用 Instagram 官方授权发布能力，重点承接 Business / Creator 账号发布和定时发布路线。
 
 ### MCP connector 路线
 
@@ -84,6 +98,8 @@ provider/client 实现层
   → 移动端 Instagram 操作 tools
   → 写入结构化日志
 ```
+
+`instagram-connector` 是 API 不可用、账号类型不支持或接口能力不足时的兜底执行路线。
 
 ## sessionRef
 
@@ -112,6 +128,25 @@ XML 组件节点执行
 
 XML 组件节点执行是主路径，截图坐标只作为单次兜底。
 
+## 本地 aiograpi-rest 服务
+
+本地 aiograpi-rest 服务由 [insta/docker-compose.yml](insta/docker-compose.yml) 启动。
+
+当前配置：
+
+```text
+host baseUrl: http://localhost:8005
+container port: 8000
+session header: X-Session-ID
+```
+
+验证命令：
+
+```bash
+cd instagram-skills
+pnpm --filter @instagram-skills/instagram-aiograpi-rest smoke:local
+```
+
 ## 主要文档
 
 | 文档 | 说明 |
@@ -120,15 +155,38 @@ XML 组件节点执行是主路径，截图坐标只作为单次兜底。
 | [Instagram养号skills三天实现计划.md](docs/Instagram养号skills三天实现计划.md) | 三天分阶段实现计划 |
 | [sessionRef设计与实现方案.md](docs/plans/sessionRef设计与实现方案.md) | sessionRef、SQLite registry、provider session 表设计 |
 | [instagram-core包设计与实现方案.md](docs/plans/instagram-core包设计与实现方案.md) | 通用接口、类型、branded id 设计 |
-| [instagram包设计与实现方案.md](docs/plans/instagram包设计与实现方案.md) | Cordis 适配层设计 |
+| [instagram包设计与实现方案.md](docs/plans/instagram包设计与实现方案.md) | Cordis 适配层设计，当前实现包名为 `instagram-cordis` |
 | [instagram-aiograpi-rest包设计与实现方案.md](docs/plans/instagram-aiograpi-rest包设计与实现方案.md) | aiograpi-rest provider 设计 |
-| [instagram-official-api包设计与实现方案.md](docs/plans/instagram-official-api包设计与实现方案.md) | 官方 API provider 预留设计 |
+| [instagram-official-api包设计与实现方案.md](docs/plans/instagram-official-api包设计与实现方案.md) | 基于 Zernio API 的官方发布 provider 设计 |
 | [instagram-connector包设计与实现方案.md](docs/plans/instagram-connector包设计与实现方案.md) | MCP connector 与移动端兜底策略 |
 | [instagram-profile-setup包设计与实现方案.md](docs/plans/instagram-profile-setup包设计与实现方案.md) | 账号资料生成和编辑计划 skill |
 | [instagram-content-publish包设计与实现方案.md](docs/plans/instagram-content-publish包设计与实现方案.md) | 内容生成、发布计划、状态查询计划 skill |
 | [instagram-video-interaction包设计与实现方案.md](docs/plans/instagram-video-interaction包设计与实现方案.md) | 视频互动计划、判断、评论生成 skill |
 | [instagram-warmup-orchestrator包设计与实现方案.md](docs/plans/instagram-warmup-orchestrator包设计与实现方案.md) | 养号总编排 skill |
 | [Instagram养号skills设计方案汇报.html](docs/plans/Instagram养号skills设计方案汇报.html) | 汇报用 HTML 方案页 |
+| [instagram-skills/README.md](instagram-skills/README.md) | monorepo 包结构、命令和当前包状态 |
+
+## 常用命令
+
+```bash
+cd instagram-skills
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+只测试 aiograpi-rest provider：
+
+```bash
+pnpm --filter @instagram-skills/instagram-aiograpi-rest test
+```
+
+检查本地 aiograpi-rest OpenAPI：
+
+```bash
+pnpm --filter @instagram-skills/instagram-aiograpi-rest smoke:local
+```
 
 ## 三天实现目标
 
@@ -136,14 +194,14 @@ XML 组件节点执行是主路径，截图坐标只作为单次兜底。
 
 ### Day 1
 
-完成底层能力：
+完成底层能力与 provider 基座：
 
 * monorepo 包结构
 * `instagram-core`
 * `sessionRef`
-* `instagram`
+* `instagram-cordis`
 * `instagram-aiograpi-rest`
-* `instagram-official-api` 占位
+* `instagram-official-api` / Zernio provider 骨架
 * `instagram-connector` MCP server 骨架
 
 ### Day 2
@@ -161,7 +219,7 @@ XML 组件节点执行是主路径，截图坐标只作为单次兜底。
 完成集成与验收：
 
 * agent 服务侧计划执行入口
-* `sessionRef` 执行层集成
+* `sessionRef` 执行层接入 provider / connector
 * connector XML / 截图坐标兜底
 * 结构化日志
 * benchmark 基础用例
@@ -172,7 +230,9 @@ XML 组件节点执行是主路径，截图坐标只作为单次兜底。
 
 * Python agent 直接复用 TS API provider
 * `instagram-protocol` 真实实现
-* 官方 API 完整 OAuth 授权和真实发布
+* Zernio account connect / OAuth 授权页面
+* Meta Graph API 直连接入
+* Zernio media upload endpoint
 * 生产级多账号调度
 * 完整素材库后台
 * 自动审批系统 UI
