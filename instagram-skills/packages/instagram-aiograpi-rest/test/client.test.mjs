@@ -133,7 +133,7 @@ test("search videos maps media items", async () => {
 test("media actions call like and comment routes", async () => {
   const mock = createMockFetch([
     { status: 200, body: { media_id: "media_001", acted_at: "2026-08-25T00:01:00.000Z" } },
-    { status: 200, body: { media_id: "media_001", acted_at: "2026-08-25T00:02:00.000Z" } }
+    { status: 200, body: { pk: "comment_001", text: "nice", created_at_utc: "2026-08-25T00:02:00.000Z", status: "Active" } }
   ]);
   const client = createAiograpiRestClient({
     baseUrl: "https://aiograpi.example",
@@ -243,6 +243,91 @@ test("publish validates unsupported asset metadata before HTTP request", async (
         assets: [{ uri: "file:///too-large.jpg", mediaType: "image", sizeBytes: 9 * 1024 * 1024 }]
       }),
     (error) => error instanceof InstagramProviderError && error.code === "unsupported_operation"
+  );
+  assert.equal(mock.requests.length, 0);
+});
+
+test("publish rejects scheduledAt because aiograpi-rest only supports immediate upload", async () => {
+  const mock = createMockFetch([]);
+  const client = createAiograpiRestClient({
+    baseUrl: "https://aiograpi.example",
+    requestTimeoutMs: 30000,
+    fetch: mock.fetch
+  });
+
+  await assert.rejects(
+    () =>
+      client.publish.publishContent({
+        account,
+        type: "post",
+        scheduledAt: "2026-08-26T10:00:00.000Z",
+        assets: [{ uri: "https://cdn.example/post.jpg", mediaType: "image", sizeBytes: 1024, aspectRatio: 1, mimeType: "image/jpeg" }]
+      }),
+    (error) => error instanceof InstagramProviderError && error.code === "unsupported_operation"
+  );
+  assert.equal(mock.requests.length, 0);
+});
+
+test("publish multiple local post assets uses album upload route", async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), "aiograpi-rest-album-test-"));
+  const firstPath = join(tempDir, "post-1.jpg");
+  const secondPath = join(tempDir, "post-2.jpg");
+
+  try {
+    await writeFile(firstPath, "fake-image-1");
+    await writeFile(secondPath, "fake-image-2");
+    const mock = createMockFetch([
+      { status: 200, body: { id: "album_001", taken_at: "2026-08-25T00:06:00.000Z" } }
+    ]);
+    const client = createAiograpiRestClient({
+      baseUrl: "https://aiograpi.example",
+      requestTimeoutMs: 30000,
+      fetch: mock.fetch
+    });
+
+    const result = await client.publish.publishContent({
+      account,
+      type: "post",
+      caption: "album",
+      assets: [
+        { uri: firstPath, mediaType: "image", sizeBytes: 1024, aspectRatio: 1, mimeType: "image/jpeg" },
+        { uri: secondPath, mediaType: "image", sizeBytes: 1024, aspectRatio: 1, mimeType: "image/jpeg" }
+      ]
+    });
+
+    assert.equal(result.publishId, "album_001");
+    assert.equal(mock.requests[0].url, "https://aiograpi.example/album/upload");
+    assert.equal(mock.requests[0].init.headers["content-type"], undefined);
+    assert.equal(mock.requests[0].init.body instanceof FormData, true);
+    assert.equal(mock.requests[0].init.body.get("caption"), "album");
+    assert.equal(mock.requests[0].init.body.getAll("files").length, 2);
+  } finally {
+    await rm(tempDir, { force: true, recursive: true });
+  }
+});
+
+test("publish rejects multiple remote assets because aiograpi-rest has no album by-url upload", async () => {
+  const mock = createMockFetch([]);
+  const client = createAiograpiRestClient({
+    baseUrl: "https://aiograpi.example",
+    requestTimeoutMs: 30000,
+    fetch: mock.fetch
+  });
+
+  await assert.rejects(
+    () =>
+      client.publish.publishContent({
+        account,
+        type: "post",
+        assets: [
+          { uri: "https://cdn.example/post-1.jpg", mediaType: "image", sizeBytes: 1024, aspectRatio: 1, mimeType: "image/jpeg" },
+          { uri: "https://cdn.example/post-2.jpg", mediaType: "image", sizeBytes: 1024, aspectRatio: 1, mimeType: "image/jpeg" }
+        ]
+      }),
+    (error) =>
+      error instanceof InstagramProviderError &&
+      error.code === "unsupported_operation" &&
+      error.message.includes("requires local file assets")
   );
   assert.equal(mock.requests.length, 0);
 });

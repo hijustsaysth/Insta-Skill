@@ -1,4 +1,9 @@
 export const AIOGRAPI_REST_ROUTES = {
+  authLogin: "/auth/login",
+  authLoginBySessionId: "/auth/login/by/sessionid",
+  authRelogin: "/auth/relogin",
+  authChallengeResolve: "/auth/challenge/resolve",
+  authSettings: "/auth/settings",
   account: "/account",
   accountPicture: "/account/picture",
   searchReels: "/search/reels",
@@ -12,5 +17,6 @@ export const AIOGRAPI_REST_ROUTES = {
   clipUpload: "/clip/upload",
   clipUploadByUrl: "/clip/upload/by/url",
   storyUpload: "/story/upload",
-  storyUploadByUrl: "/story/upload/by/url"
+  storyUploadByUrl: "/story/upload/by/url",
+  albumUpload: "/album/upload"
 } as const;

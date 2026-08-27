@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS aiograpi_sessions (
   session_ref TEXT PRIMARY KEY CHECK (length(trim(session_ref)) > 0),
   aiograpi_session_id TEXT NOT NULL CHECK (length(trim(aiograpi_session_id)) > 0),
   base_url TEXT CHECK (base_url IS NULL OR length(trim(base_url)) > 0),
+  settings_ciphertext TEXT CHECK (settings_ciphertext IS NULL OR length(trim(settings_ciphertext)) > 0),
+  last_login_at TEXT CHECK (last_login_at IS NULL OR length(trim(last_login_at)) > 0),
+  last_refresh_at TEXT CHECK (last_refresh_at IS NULL OR length(trim(last_refresh_at)) > 0),
   created_at TEXT NOT NULL CHECK (length(trim(created_at)) > 0),
   updated_at TEXT NOT NULL CHECK (length(trim(updated_at)) > 0),
   FOREIGN KEY (session_ref) REFERENCES session_refs(session_ref) ON DELETE CASCADE

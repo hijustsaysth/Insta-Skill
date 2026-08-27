@@ -18,7 +18,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "pnpm typecheck && pnpm build && node --test test/*.test.mjs",
-    "smoke:local": "node test/smoke.local.mjs"
+    "smoke:local": "pnpm build && node test/smoke.local.mjs"
   },
   "dependencies": {
     "@instagram-skills/instagram-core": "workspace:*"

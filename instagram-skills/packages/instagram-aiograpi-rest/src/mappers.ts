@@ -52,6 +52,13 @@ interface AiograpiActionResponse {
   created_at_utc?: string;
 }
 
+interface AiograpiCommentResponse {
+  pk?: string | number;
+  text?: string;
+  created_at_utc?: string;
+  status?: string;
+}
+
 interface AiograpiPublishResponse {
   pk?: string | number;
   publishId?: string;
@@ -152,6 +159,20 @@ export function mapActionResult(response: unknown, fallbackMediaId: string, acte
   return {
     mediaId: InstagramMediaId(body.mediaId ?? body.media_id ?? fallbackMediaId),
     actedAt: body.actedAt ?? body.acted_at ?? body.created_at_utc ?? actedAt
+  };
+}
+
+/**
+ * 输入：aiograpi-rest 评论响应和回退 mediaId。
+ * 输出：InstagramActionResult。
+ * 作用：把 /media/comment 返回的 Comment 结构映射为核心动作结果。
+ */
+export function mapCommentActionResult(response: unknown, fallbackMediaId: string, actedAt: string): InstagramActionResult {
+  const body = response as AiograpiCommentResponse;
+
+  return {
+    mediaId: InstagramMediaId(fallbackMediaId),
+    actedAt: body.created_at_utc ?? actedAt
   };
 }
 

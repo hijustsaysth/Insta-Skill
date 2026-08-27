@@ -1,0 +1,41 @@
+{
+  "name": "@instagram-skills/instagram-account-access",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "instagram-account-access": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "pnpm typecheck && pnpm build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@instagram-skills/instagram-aiograpi-rest": "workspace:*",
+    "@instagram-skills/instagram-core": "workspace:*",
+    "@instagram-skills/instagram-official-api": "workspace:*",
+    "@instagram-skills/instagram-session-store-sqlite": "workspace:*"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

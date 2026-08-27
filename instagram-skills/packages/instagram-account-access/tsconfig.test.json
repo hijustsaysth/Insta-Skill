@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "disableSourceOfProjectReferenceRedirect": true,
+    "rootDir": ".",
+    "outDir": "dist-test",
+    "noEmit": true
+  },
+  "references": [
+    { "path": "../instagram-core" },
+    { "path": "../instagram-aiograpi-rest" },
+    { "path": "../instagram-official-api" },
+    { "path": "../instagram-session-store-sqlite" }
+  ],
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

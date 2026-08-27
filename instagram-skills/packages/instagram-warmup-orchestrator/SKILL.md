@@ -1,3 +1,8 @@
+---
+name: instagram-warmup-orchestrator
+description: 生成 Instagram 养号总计划和执行结果汇总。
+---
+
 # instagram-warmup-orchestrator
 
 ## 职责

@@ -1,3 +1,8 @@
+---
+name: instagram-profile-setup
+description: 生成 Instagram 账号资料方案、资料编辑计划和参数草案。
+---
+
 # instagram-profile-setup
 
 ## 职责

@@ -3,3 +3,6 @@ dist/
 packages/*/dist/
 *.tsbuildinfo
 packages/*/*.tsbuildinfo
+packages/instagram-official-api/api.yml
+login.json
+*.login.json

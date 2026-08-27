@@ -29,6 +29,9 @@ export interface UpsertAiograpiSessionInput {
   sessionRef: string;
   aiograpiSessionId: string;
   baseUrl?: string;
+  settingsCiphertext?: string;
+  lastLoginAt?: string;
+  lastRefreshAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -98,6 +101,9 @@ interface AiograpiSessionRow {
   session_ref: string;
   aiograpi_session_id: string;
   base_url: string | null;
+  settings_ciphertext: string | null;
+  last_login_at: string | null;
+  last_refresh_at: string | null;
 }
 
 interface OfficialApiSessionRow {
@@ -214,16 +220,31 @@ export class SqliteInstagramSessionStore implements InstagramSessionStore {
           session_ref,
           aiograpi_session_id,
           base_url,
+          settings_ciphertext,
+          last_login_at,
+          last_refresh_at,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(session_ref) DO UPDATE SET
           aiograpi_session_id = excluded.aiograpi_session_id,
           base_url = excluded.base_url,
+          settings_ciphertext = excluded.settings_ciphertext,
+          last_login_at = excluded.last_login_at,
+          last_refresh_at = excluded.last_refresh_at,
           updated_at = excluded.updated_at
         `
       )
-      .run(input.sessionRef, input.aiograpiSessionId, input.baseUrl ?? null, input.createdAt, input.updatedAt);
+      .run(
+        input.sessionRef,
+        input.aiograpiSessionId,
+        input.baseUrl ?? null,
+        input.settingsCiphertext ?? null,
+        input.lastLoginAt ?? null,
+        input.lastRefreshAt ?? null,
+        input.createdAt,
+        input.updatedAt
+      );
   }
 
   /**
@@ -509,7 +530,13 @@ export class SqliteInstagramSessionStore implements InstagramSessionStore {
    */
   private readAiograpiSessionDetail(sessionRef: string): AiograpiSession {
     const row = this.database
-      .prepare("SELECT session_ref, aiograpi_session_id, base_url FROM aiograpi_sessions WHERE session_ref = ?")
+      .prepare(
+        `
+        SELECT session_ref, aiograpi_session_id, base_url, settings_ciphertext, last_login_at, last_refresh_at
+        FROM aiograpi_sessions
+        WHERE session_ref = ?
+        `
+      )
       .get(sessionRef) as AiograpiSessionRow | undefined;
 
     if (!row) {
@@ -523,6 +550,18 @@ export class SqliteInstagramSessionStore implements InstagramSessionStore {
 
     if (row.base_url !== null) {
       session.baseUrl = row.base_url;
+    }
+
+    if (row.settings_ciphertext !== null) {
+      session.settingsCiphertext = row.settings_ciphertext;
+    }
+
+    if (row.last_login_at !== null) {
+      session.lastLoginAt = row.last_login_at;
+    }
+
+    if (row.last_refresh_at !== null) {
+      session.lastRefreshAt = row.last_refresh_at;
     }
 
     return session;

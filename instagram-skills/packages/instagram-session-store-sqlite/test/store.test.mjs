@@ -71,6 +71,9 @@ test("aiograpi session resolves provider-specific session id", async () => {
       sessionRef: "sess_aiograpi_001",
       aiograpiSessionId: "aiograpi_session_001",
       baseUrl: "http://127.0.0.1:8000",
+      settingsCiphertext: "ciphertext-settings",
+      lastLoginAt: now,
+      lastRefreshAt: "2026-08-24T00:30:00.000Z",
       createdAt: now,
       updatedAt: now
     });
@@ -80,7 +83,10 @@ test("aiograpi session resolves provider-specific session id", async () => {
     assert.deepEqual(session, {
       sessionRef: "sess_aiograpi_001",
       aiograpiSessionId: "aiograpi_session_001",
-      baseUrl: "http://127.0.0.1:8000"
+      baseUrl: "http://127.0.0.1:8000",
+      settingsCiphertext: "ciphertext-settings",
+      lastLoginAt: now,
+      lastRefreshAt: "2026-08-24T00:30:00.000Z"
     });
   });
 });

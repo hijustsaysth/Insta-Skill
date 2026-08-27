@@ -1,3 +1,8 @@
+---
+name: instagram-content-publish
+description: 生成 Instagram 内容草稿、发布计划、状态查询计划和参数草案。
+---
+
 # instagram-content-publish
 
 ## 职责

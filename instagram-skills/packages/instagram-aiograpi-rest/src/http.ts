@@ -10,7 +10,7 @@ export interface AiograpiRestHttpClient {
 interface AiograpiRestBaseRequest {
   path: string;
   method: "GET" | "POST" | "PATCH";
-  sessionRef: string;
+  sessionRef?: string;
   query?: Record<string, string | number | undefined>;
 }
 
@@ -155,12 +155,12 @@ function buildUrl(baseUrl: string, path: string, query?: Record<string, string |
 /**
  * 输入：session header 名称和 sessionRef。
  * 输出：HTTP headers。
- * 作用：为每个请求附带 JSON 类型和 aiograpi-rest session 标识。
+ * 作用：为请求附带内容类型，并在需要时附带 aiograpi-rest session 标识。
  */
-function createHeaders(sessionHeaderName: string, sessionRef: string, contentType?: string): Record<string, string> {
+function createHeaders(sessionHeaderName: string, sessionRef: string | undefined, contentType?: string): Record<string, string> {
   return {
     ...(contentType === undefined ? {} : { "content-type": contentType }),
-    [sessionHeaderName]: sessionRef
+    ...(sessionRef === undefined ? {} : { [sessionHeaderName]: sessionRef })
   };
 }
 

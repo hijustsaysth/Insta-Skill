@@ -15,6 +15,28 @@ importers:
         specifier: ^5.5.4
         version: 5.9.3
 
+  packages/instagram-account-access:
+    dependencies:
+      '@deepseek-ai/cordis':
+        specifier: ^4.0.1
+        version: 4.0.1
+      '@instagram-skills/instagram-aiograpi-rest':
+        specifier: workspace:*
+        version: link:../instagram-aiograpi-rest
+      '@instagram-skills/instagram-core':
+        specifier: workspace:*
+        version: link:../instagram-core
+      '@instagram-skills/instagram-official-api':
+        specifier: workspace:*
+        version: link:../instagram-official-api
+      '@instagram-skills/instagram-session-store-sqlite':
+        specifier: workspace:*
+        version: link:../instagram-session-store-sqlite
+    devDependencies:
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
+
   packages/instagram-aiograpi-rest:
     dependencies:
       '@instagram-skills/instagram-core':
@@ -61,13 +83,16 @@ importers:
 
   packages/instagram-official-api:
     dependencies:
-      '@instagram-skills/instagram-cordis':
-        specifier: workspace:*
-        version: link:../instagram-cordis
       '@instagram-skills/instagram-core':
         specifier: workspace:*
         version: link:../instagram-core
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
     devDependencies:
+      '@instagram-skills/instagram-cordis':
+        specifier: workspace:*
+        version: link:../instagram-cordis
       typescript:
         specifier: ^5.5.4
         version: 5.9.3
@@ -131,6 +156,11 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
+  yaml@2.9.0:
+    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
 snapshots:
 
   '@deepseek-ai/cordis@4.0.1':
@@ -149,3 +179,5 @@ snapshots:
   typescript@5.9.3: {}
 
   undici-types@6.21.0: {}
+
+  yaml@2.9.0: {}

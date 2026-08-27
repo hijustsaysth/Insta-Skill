@@ -24,7 +24,7 @@ export interface AiograpiRestPublishPayload {
 /**
  * 输入：发布请求 payload。
  * 输出：aiograpi-rest 发布请求体和传输方式。
- * 作用：根据素材 URI 类型选择 JSON by URL 或 multipart by file 发布路线。
+ * 作用：根据素材数量、发布类型和 URI 类型选择 aiograpi-rest 上传路线。
  */
 export async function createPublishRequestBody(payload: AiograpiRestPublishPayload): Promise<AiograpiRestPublishRequestBody> {
   if (payload.assets.length === 0) {
@@ -32,7 +32,7 @@ export async function createPublishRequestBody(payload: AiograpiRestPublishPaylo
   }
 
   if (payload.assets.length > 1) {
-    throw new InstagramProviderError("unsupported_operation", "aiograpi-rest single upload endpoints only support one asset");
+    return createAlbumUploadBody(payload);
   }
 
   const asset = payload.assets[0];
@@ -42,6 +42,37 @@ export async function createPublishRequestBody(payload: AiograpiRestPublishPaylo
   }
 
   return isHttpAssetUri(asset.uri) ? createUrlUploadBody(payload, asset) : createFileUploadBody(payload, asset);
+}
+
+/**
+ * 输入：多素材 post 发布 payload。
+ * 输出：aiograpi-rest album multipart 请求体。
+ * 作用：把多个本地素材转换为 /album/upload 需要的 files 字段。
+ */
+async function createAlbumUploadBody(payload: AiograpiRestPublishPayload): Promise<AiograpiRestPublishRequestBody> {
+  if (payload.type !== "post") {
+    throw new InstagramProviderError("unsupported_operation", "aiograpi-rest album upload only supports post publishing");
+  }
+
+  const form = new FormData();
+
+  for (const asset of payload.assets) {
+    if (isHttpAssetUri(asset.uri)) {
+      throw new InstagramProviderError("unsupported_operation", "aiograpi-rest album upload requires local file assets");
+    }
+
+    const localPath = resolveLocalAssetPath(asset.uri);
+    const fileBuffer = await readFile(localPath);
+    form.append("files", new Blob([fileBuffer as unknown as BlobPart]), basename(localPath));
+  }
+
+  form.append("caption", payload.caption ?? "");
+
+  return {
+    path: AIOGRAPI_REST_ROUTES.albumUpload,
+    transport: "multipart",
+    body: form
+  };
 }
 
 /**

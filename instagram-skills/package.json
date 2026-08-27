@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b",
+    "validate:skills": "node scripts/validate-skill-frontmatter.mjs",
     "test": "pnpm -r --if-present test"
   },
   "devDependencies": {

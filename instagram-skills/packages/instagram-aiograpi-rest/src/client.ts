@@ -14,10 +14,10 @@ import { createProfilePictureBody, createPublishRequestBody } from "./assets.js"
 import { createAiograpiRestHttpClient } from "./http.js";
 import {
   mapActionResult,
+  mapCommentActionResult,
   mapMediaItem,
   mapProfileResult,
   mapPublishResult,
-  mapPublishStatusResult,
   mapSearchVideosResult
 } from "./mappers.js";
 import { AIOGRAPI_REST_ROUTES } from "./routes.js";
@@ -113,19 +113,25 @@ export function createAiograpiRestClient(config: AiograpiRestClientConfig): Inst
           })
         });
 
-        return mapActionResult(response, request.mediaId, actedAt);
+        return mapCommentActionResult(response, request.mediaId, actedAt);
       }
     },
     publish: {
       async publishContent(request: InstagramPublishContentRequest) {
+        if (request.scheduledAt !== undefined) {
+          throw new InstagramProviderError(
+            "unsupported_operation",
+            "aiograpi-rest publish endpoints publish immediately and do not support scheduledAt"
+          );
+        }
+
         validatePublishAssets(request.type, request.assets);
         const publishBody = await createPublishRequestBody({
           accountId: request.account.accountId,
           type: request.type,
           assets: request.assets,
           ...(request.caption === undefined ? {} : { caption: request.caption }),
-          ...(request.tags === undefined ? {} : { tags: request.tags }),
-          ...(request.scheduledAt === undefined ? {} : { scheduledAt: request.scheduledAt })
+          ...(request.tags === undefined ? {} : { tags: request.tags })
         });
 
         const baseRequest = {

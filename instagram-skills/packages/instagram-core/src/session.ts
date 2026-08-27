@@ -12,6 +12,9 @@ export interface AiograpiSession {
   sessionRef: string;
   aiograpiSessionId: string;
   baseUrl?: string;
+  settingsCiphertext?: string;
+  lastLoginAt?: string;
+  lastRefreshAt?: string;
 }
 
 export interface OfficialApiSession {
