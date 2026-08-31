@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
-import { InstagramProviderError, type InstagramAssetRef, type InstagramPublishType } from "@instagram-skills/instagram-core";
+import { InstagramProviderError, type InstagramAssetRef, type InstagramPublishType } from "./instagram-types.js";
 import { AIOGRAPI_REST_ROUTES } from "./routes.js";
 
 export type AiograpiRestPublishTransport = "form" | "multipart";

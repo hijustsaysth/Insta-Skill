@@ -7,8 +7,8 @@ import type {
   InstagramPublishStatusRequest,
   InstagramSearchVideosRequest,
   InstagramUpdateProfileRequest
-} from "@instagram-skills/instagram-core";
-import { InstagramProviderError } from "@instagram-skills/instagram-core";
+} from "./instagram-types.js";
+import { InstagramProviderError } from "./instagram-types.js";
 import type { AiograpiRestClientConfig } from "./config.js";
 import { createProfilePictureBody, createPublishRequestBody } from "./assets.js";
 import { createAiograpiRestHttpClient } from "./http.js";

@@ -1,4 +1,4 @@
-import { InstagramProviderError } from "@instagram-skills/instagram-core";
+import { InstagramProviderError } from "./instagram-types.js";
 import type { AiograpiRestClientConfig } from "./config.js";
 import { createAiograpiRestHttpClient } from "./http.js";
 import { AIOGRAPI_REST_ROUTES } from "./routes.js";
@@ -10,6 +10,7 @@ export interface AiograpiRestLoginRequest {
   proxy?: string;
   locale?: string;
   timezone?: string;
+  accountId?: string;
 }
 
 export interface AiograpiRestLoginBySessionIdRequest {
@@ -17,6 +18,8 @@ export interface AiograpiRestLoginBySessionIdRequest {
   proxy?: string;
   locale?: string;
   timezone?: string;
+  accountId?: string;
+  username?: string;
 }
 
 export interface AiograpiRestLoginResult {
@@ -76,7 +79,8 @@ export function createAiograpiRestAuthClient(config: AiograpiRestClientConfig): 
           verification_code: request.verificationCode,
           proxy: request.proxy,
           locale: request.locale,
-          timezone: request.timezone
+          timezone: request.timezone,
+          account_id: request.accountId
         })
       });
 
@@ -90,7 +94,9 @@ export function createAiograpiRestAuthClient(config: AiograpiRestClientConfig): 
           sessionid: request.sessionid,
           proxy: request.proxy,
           locale: request.locale,
-          timezone: request.timezone
+          timezone: request.timezone,
+          account_id: request.accountId,
+          username: request.username
         })
       });
 

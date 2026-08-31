@@ -18,7 +18,8 @@ test("connector tool schema matches local runtime operations", () => {
       "instagram.reel.like",
       "instagram.reel.comment",
       "instagram.reel.next",
-      "instagram.reels.engage_workflow"
+      "instagram.reels.engage_workflow",
+      "instagram.profile.update"
     ]
   );
 });
@@ -26,9 +27,10 @@ test("connector tool schema matches local runtime operations", () => {
 test("state-changing tools are marked as side-effecting tools", () => {
   const sideEffects = connectorTools.filter((tool) => tool.sideEffect).map((tool) => tool.name);
 
-  assert.deepEqual(sideEffects, ["instagram.reel.like", "instagram.reel.comment"]);
+  assert.deepEqual(sideEffects, ["instagram.reel.like", "instagram.reel.comment", "instagram.profile.update"]);
   assert.equal(isConnectorSideEffectTool("instagram.reel.like"), true);
   assert.equal(isConnectorSideEffectTool("instagram.reel.comment"), true);
+  assert.equal(isConnectorSideEffectTool("instagram.profile.update"), true);
   assert.equal(isConnectorSideEffectTool("instagram.reels.engage_workflow"), false);
   assert.equal(isConnectorSideEffectTool("instagram.debug.snapshot"), false);
   assert.equal(isConnectorSideEffectTool("instagram.reel.collect_signals"), false);

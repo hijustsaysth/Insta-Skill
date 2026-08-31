@@ -4,13 +4,14 @@
   "type": "module",
   "packageManager": "pnpm@10.33.4",
   "scripts": {
-    "build": "tsc -b",
-    "typecheck": "tsc -b",
+    "build": "node scripts/build-skill-distribution.mjs",
+    "install:codex-skills": "node scripts/install-codex-instagram-skills.mjs",
     "validate:skills": "node scripts/validate-skill-frontmatter.mjs",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm validate:skills && pnpm build"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "esbuild": "^0.28.2",
     "typescript": "^5.5.4"
   }
 }

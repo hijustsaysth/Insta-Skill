@@ -1,0 +1,9 @@
+export const DEFAULT_VIDEO_INTERACTION_DURATION_MS = 30 * 60 * 1000;
+export const DEFAULT_VIDEO_INTERACTION_MAX_LIKES = 5;
+export const DEFAULT_VIDEO_INTERACTION_MAX_COMMENTS = 2;
+export const DEFAULT_MIN_DWELL_MS = 5000;
+export const DEFAULT_MAX_DWELL_MS = 15000;
+export const DEFAULT_KEYWORDS = ["same niche reels"];
+export const DEFAULT_TARGET_LANGUAGE = "en";
+export const DEFAULT_MATERIAL_LIBRARY_PATH = "materials/instagram";
+export const NEXT_RUN_HOUR = 9;

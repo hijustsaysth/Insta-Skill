@@ -1,4 +1,4 @@
-import { InstagramProviderError } from "@instagram-skills/instagram-core";
+import { InstagramProviderError } from "./instagram-types.js";
 import { DEFAULT_SESSION_HEADER_NAME, type AiograpiRestClientConfig, type AiograpiRestFetch } from "./config.js";
 
 export interface AiograpiRestHttpClient {

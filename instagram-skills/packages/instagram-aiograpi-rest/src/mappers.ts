@@ -9,7 +9,7 @@ import {
   type InstagramPublishStatus,
   type InstagramPublishStatusResult,
   type InstagramUpdateProfileResult
-} from "@instagram-skills/instagram-core";
+} from "./instagram-types.js";
 
 interface AiograpiProfileResponse {
   pk?: string;

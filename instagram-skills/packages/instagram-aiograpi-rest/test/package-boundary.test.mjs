@@ -23,13 +23,12 @@ test("main entry does not import cordis adapter or plugin entry", () => {
   assert.equal(indexSource.includes("@instagram-skills/instagram-cordis"), false);
 });
 
-test("package keeps cordis adapter out of runtime dependencies", () => {
+test("package does not depend on deleted workspace core or cordis packages", () => {
   const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
-  assert.deepEqual(packageJson.dependencies, {
-    "@instagram-skills/instagram-core": "workspace:*"
-  });
-  assert.equal(packageJson.peerDependencies["@instagram-skills/instagram-cordis"], "workspace:*");
+  assert.equal(packageJson.dependencies, undefined);
+  assert.equal(packageJson.peerDependencies, undefined);
+  assert.equal(packageJson.devDependencies["@instagram-skills/instagram-cordis"], undefined);
 });
 
 test("source does not import business skill packages or other providers", () => {

@@ -6,9 +6,6 @@
     "outDir": "dist-test",
     "noEmit": true
   },
-  "references": [
-    { "path": "../instagram-core" },
-    { "path": "../instagram-cordis" }
-  ],
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["src/plugin.ts"]
 }

@@ -1,4 +1,4 @@
-import { InstagramProviderError, type InstagramAssetRef, type InstagramPublishType } from "@instagram-skills/instagram-core";
+import { InstagramProviderError, type InstagramAssetRef, type InstagramPublishType } from "./instagram-types.js";
 
 export interface AiograpiRestAssetMetadata {
   sizeBytes?: number;

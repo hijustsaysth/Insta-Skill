@@ -43,6 +43,20 @@ test("auth routes use aiograpi-rest documented content types", () => {
   assert.ok(openapi.paths?.[AIOGRAPI_REST_ROUTES.authSettings]?.get, "missing GET /auth/settings");
 });
 
+test("user about route requires user_id and returns About schema", () => {
+  const operation = openapi.paths?.[AIOGRAPI_REST_ROUTES.userAbout]?.get;
+  assert.ok(operation, "missing GET /user/about");
+  assert.ok(
+    operation.parameters.some((parameter) => parameter.name === "user_id" && parameter.required === true),
+    "GET /user/about must require user_id"
+  );
+  assert.equal(
+    operation.responses?.["200"]?.content?.["application/json"]?.schema?.$ref,
+    "#/components/schemas/About"
+  );
+  assert.ok(openapi.components?.schemas?.About?.properties?.date, "About schema must expose date");
+});
+
 test("album upload with music exists but is not part of first-version publish implementation", () => {
   assert.ok(openapi.paths?.["/album/upload"], "missing aiograpi-rest path: /album/upload");
   assert.ok(openapi.paths?.["/album/upload/with/music"], "missing aiograpi-rest path: /album/upload/with/music");

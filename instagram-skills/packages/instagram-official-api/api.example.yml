@@ -1,3 +1,0 @@
-zernioBaseUrl: https://zernio.com/api/v1
-apiKey: ${ZERNIO_API_KEY}
-requestTimeoutMs: 30000

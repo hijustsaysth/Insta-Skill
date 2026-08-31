@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { InstagramProviderError } from "@instagram-skills/instagram-core";
+import { InstagramProviderError } from "../dist/index.js";
 import { createAiograpiRestAuthClient } from "../dist/index.js";
 
 /**
@@ -51,7 +51,8 @@ test("login sends credentials without session header and returns aiograpi sessio
     verificationCode: "123456",
     proxy: "http://127.0.0.1:8080",
     locale: "en_US",
-    timezone: "28800"
+    timezone: "28800",
+    accountId: "acct_001"
   });
 
   assert.deepEqual(result, { aiograpiSessionId: "aiograpi_session_001" });
@@ -61,6 +62,7 @@ test("login sends credentials without session header and returns aiograpi sessio
   assert.equal(mock.requests[0].init.headers["content-type"], "application/x-www-form-urlencoded");
   assert.equal(readForm(mock.requests[0]).get("username"), "user_001");
   assert.equal(readForm(mock.requests[0]).get("verification_code"), "123456");
+  assert.equal(readForm(mock.requests[0]).get("account_id"), "acct_001");
 });
 
 test("loginBySessionId sends existing Instagram sessionid without session header", async () => {
@@ -73,13 +75,17 @@ test("loginBySessionId sends existing Instagram sessionid without session header
 
   const result = await client.loginBySessionId({
     sessionid: "instagram_cookie_sessionid",
-    locale: "en_US"
+    locale: "en_US",
+    accountId: "acct_001",
+    username: "user_001"
   });
 
   assert.deepEqual(result, { aiograpiSessionId: "aiograpi_session_cookie_001" });
   assert.equal(mock.requests[0].url, "https://aiograpi.example/auth/login/by/sessionid");
   assert.equal(mock.requests[0].init.headers["X-Session-ID"], undefined);
   assert.equal(readForm(mock.requests[0]).get("sessionid"), "instagram_cookie_sessionid");
+  assert.equal(readForm(mock.requests[0]).get("account_id"), "acct_001");
+  assert.equal(readForm(mock.requests[0]).get("username"), "user_001");
 });
 
 test("relogin refreshes existing aiograpi session with session header", async () => {

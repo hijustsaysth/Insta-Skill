@@ -1,0 +1,44 @@
+{
+  "connectorId": "instagram.mobile.growth.v1",
+  "version": "0.1.0",
+  "entryClass": "com.aiwos.connectors.instagram.InstagramConnector",
+  "pluginApiVersion": 1,
+  "minWorkerVersion": "0.3.0",
+  "maxWorkerVersion": "0.x",
+  "packages": ["com.instagram.android"],
+  "operations": [
+    "instagram.app.open",
+    "instagram.debug.snapshot",
+    "instagram.debug.ocr",
+    "instagram.search.open",
+    "instagram.search.input",
+    "instagram.search.open_first_reel",
+    "instagram.reel.inspect",
+    "instagram.reel.collect_signals",
+    "instagram.reel.like",
+    "instagram.reel.comment",
+    "instagram.reel.next",
+    "instagram.reels.engage_workflow"
+  ],
+  "capabilities": [
+    "app.open",
+    "ui.snapshot",
+    "ui.query",
+    "ui.click-token",
+    "ui.click-coordinate",
+    "ui.input-token",
+    "ui.submit-token",
+    "ui.scroll",
+    "ui.wait",
+    "ui.capture",
+    "vision.ocr"
+  ],
+  "compatibility": {
+    "minAndroidSdk": 26,
+    "abis": ["arm64-v8a", "x86_64"],
+    "targetAppVersions": [{"packageName": "com.instagram.android", "range": "*"}],
+    "languages": ["en-US"]
+  },
+  "builtAt": "2026-08-22T00:00:00Z",
+  "sourceRevision": "instagram-mvp-v0.1"
+}

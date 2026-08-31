@@ -6,6 +6,7 @@ export const AIOGRAPI_REST_ROUTES = {
   authSettings: "/auth/settings",
   account: "/account",
   accountPicture: "/account/picture",
+  userAbout: "/user/about",
   searchReels: "/search/reels",
   media: "/media",
   mediaLike: "/media/like",

@@ -4,30 +4,27 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "instagram-aiograpi-rest": "./dist/cli.bundle.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./plugin": {
-      "types": "./dist/plugin.d.ts",
-      "import": "./dist/plugin.js"
-    }
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    },
+    "./SKILL.md": "./SKILL.md"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "pnpm typecheck && pnpm build && node --test test/*.test.mjs",
     "smoke:local": "pnpm build && node test/smoke.local.mjs"
   },
-  "dependencies": {
-    "@instagram-skills/instagram-core": "workspace:*"
-  },
-  "peerDependencies": {
-    "@instagram-skills/instagram-cordis": "workspace:*"
-  },
   "devDependencies": {
-    "@instagram-skills/instagram-cordis": "workspace:*",
     "typescript": "^5.5.4"
   }
 }

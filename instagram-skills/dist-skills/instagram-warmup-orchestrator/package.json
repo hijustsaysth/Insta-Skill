@@ -1,0 +1,10 @@
+{
+  "name": "instagram-warmup-orchestrator",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "instagram-warmup-orchestrator": "./dist/cli.bundle.js"
+  },
+  "main": "./dist/index.js"
+}

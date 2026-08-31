@@ -1,0 +1,10 @@
+{
+  "name": "instagram-video-interaction",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "instagram-video-interaction": "./dist/cli.bundle.js"
+  },
+  "main": "./dist/index.js"
+}

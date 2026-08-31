@@ -11,7 +11,7 @@ test("package keeps MCP SDK out of runtime dependencies", () => {
 
   assert.deepEqual(packageJson.dependencies ?? {}, {});
   assert.equal(packageJson.devDependencies["@modelcontextprotocol/sdk"], undefined);
-  assert.equal(packageJson.bin["instagram-connector"], "./dist/cli.js");
+  assert.equal(packageJson.bin["instagram-connector"], "./dist/cli.bundle.js");
 });
 
 test("source does not import MCP server SDK or unrelated provider packages", () => {

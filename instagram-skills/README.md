@@ -1,152 +1,117 @@
 # instagram-skills
 
-Instagram 养号 skills 的 TypeScript monorepo。
+Instagram 养号 agent skills 发布包。
 
-这个目录只承载可开发、可测试的 TS packages。总体方案、阶段计划和汇报文档放在仓库根目录的 `docs/` 下。
+本仓库维护 5 个可分发 skill。源码位于 `packages/`，发布产物由 `pnpm build` 生成到 `dist-skills/`。每个 `dist-skills/<skill-name>/` 都是一个独立 skill，可整体复制到目标 agent 的 skills 目录中使用。
 
-## 设计边界
+## 使用边界
 
-业务 skill 只负责生成计划、内容、决策、参数草案或汇总结果。
+业务类 skill 只负责生成计划、草案、决策、参数或汇总结果。是否执行、何时执行、调用哪个执行工具、失败后是否重试，由 agent 服务决定。
 
-正式执行、循环、等待、超时、中断、重试、状态管理、provider 选择和工具调用顺序由 agent 服务负责。
+执行类 skill 提供本地 CLI 调用说明和必要 runtime。agent 可以按 `SKILL.md` 调用 CLI，但执行授权、session 管理、敏感信息保存和运行状态管理仍由 agent 服务负责。
 
-provider/client 包负责把结构化请求转换为具体 API 或 connector 调用，不包含业务编排。
+## 当前 skills
 
-## 包结构
-
-```text
-packages/
-  instagram-core
-  instagram-cordis
-  instagram-session-store-sqlite
-  instagram-aiograpi-rest
-  instagram-official-api
-  instagram-connector
-  instagram-profile-setup
-  instagram-content-publish
-  instagram-video-interaction
-  instagram-warmup-orchestrator
-```
-
-## 包职责
-
-| 包 | 职责 | 当前状态 |
+| skill | 作用 | 发布内容 |
 | --- | --- | --- |
-| `instagram-core` | 通用 `InstagramClient` 接口、类型、错误码、branded id 构造函数 | 已实现并有测试 |
-| `instagram-cordis` | Cordis `ctx.instagram` 声明和 provider 注册入口 | 已实现并有测试 |
-| `instagram-session-store-sqlite` | `sessionRef` SQLite registry、provider session 表、结构化解析日志 | 已实现并有测试 |
-| `instagram-aiograpi-rest` | aiograpi-rest provider/client，支持普通入口和 `./plugin` 入口 | 已对齐本地 aiograpi-rest 6.0.0 并有测试 |
-| `instagram-official-api` | 基于 Zernio API 的官方发布 provider/client | 方案已更新，代码待实现 |
-| `instagram-connector` | MCP connector，提供移动端 Instagram 操作 tools | 骨架阶段 |
-| `instagram-profile-setup` | 账号资料生成和编辑计划 skill | 骨架阶段 |
-| `instagram-content-publish` | 内容草稿、即时发布计划、定时发布计划、状态查询计划 skill | 骨架阶段 |
-| `instagram-video-interaction` | 视频互动计划、判断、评论生成、日志汇总 skill | 骨架阶段 |
-| `instagram-warmup-orchestrator` | 养号阶段判断、今日任务计划、执行日志汇总 skill | 骨架阶段 |
+| `instagram-warmup-orchestrator` | 根据注册日期生成每日养号计划和执行汇总日志 | `SKILL.md`、`dist/cli.bundle.js`、`dist/` |
+| `instagram-connector` | 通过 Android connector 执行移动端搜索、观看、点赞、评论和资料修改 | `SKILL.md`、`dist/cli.bundle.js`、`scripts/`、`runtime/` |
+| `instagram-aiograpi-rest` | 通过 aiograpi-rest 服务执行登录、账号读取、注册日期读取、资料修改等请求 | `SKILL.md`、`dist/cli.bundle.js`、`scripts/` |
+| `instagram-profile-setup` | 生成资料草案、头像生成约束和资料编辑计划 | `SKILL.md`、`references/`、`dist/cli.bundle.js`、`dist/` |
+| `instagram-video-interaction` | 生成视频互动计划、判断点赞评论、汇总互动日志 | `SKILL.md`、`dist/cli.bundle.js`、`dist/` |
 
-## Provider 路线
+历史实验包不作为当前发布 skill：`instagram-core`、`instagram-cordis`、`instagram-session-store-sqlite`、`instagram-official-api`、`instagram-account-access`、`instagram-content-publish`、`instagram-runtime-services`。
 
-### aiograpi-rest
-
-用于第一期普通账号 / 私有 API 路线。
-
-当前本地服务配置：
+## 目录结构
 
 ```text
-baseUrl: http://localhost:8005
-session header: X-Session-ID
+instagram-skills/
+  packages/
+    instagram-aiograpi-rest/
+    instagram-connector/
+    instagram-profile-setup/
+    instagram-video-interaction/
+    instagram-warmup-orchestrator/
+  scripts/
+    build-skill-distribution.mjs
+    install-codex-instagram-skills.mjs
+    validate-skill-frontmatter.mjs
+  dist-skills/
+    README.md
+    instagram-aiograpi-rest/
+    instagram-connector/
+    instagram-profile-setup/
+    instagram-video-interaction/
+    instagram-warmup-orchestrator/
 ```
 
-已对齐的真实路由包括：
+## 构建与验证
 
-* `PATCH /account`
-* `PATCH /account/picture`
-* `GET /search/reels`
-* `GET /media`
-* `POST /media/like`
-* `POST /media/comment`
-* `POST /photo/upload`
-* `POST /photo/upload/by/url`
-* `POST /video/upload`
-* `POST /video/upload/by/url`
-* `POST /clip/upload`
-* `POST /clip/upload/by/url`
-* `POST /story/upload`
-* `POST /story/upload/by/url`
-
-### official-api / Zernio
-
-`instagram-official-api` 保留包名，但定位已改为通过 Zernio API 使用 Instagram 官方授权发布能力。
-
-目标路线：
-
-```text
-InstagramClient
-  → instagram-official-api
-  → Zernio API
-  → Instagram 官方发布能力
-```
-
-第一版重点实现 `POST /posts`，支持 feed、carousel、story、reel 和定时发布计划。
-
-## sessionRef
-
-`sessionRef` 是业务 skill、agent 服务和 provider 之间传递登录态或运行态引用的统一字段。
-
-约束：
-
-* 对业务 skill 始终是普通 `string`
-* 不包含 access token、cookie、密码、ADB serial 等敏感细节
-* 业务 skill 只透传，不解析、不保存、不打印
-* agent 服务或 provider 执行层负责解析
-* SQLite registry 表负责路由到 provider 专属 session 表
-
-## 安装与命令
-
-```bash
+```powershell
 pnpm install
-pnpm typecheck
+pnpm validate:skills
+pnpm build
 pnpm test
 ```
 
-构建全部包：
+`pnpm build` 会重新生成 `dist-skills/`：
 
-```bash
-pnpm build
+* 复制每个 skill 的 `SKILL.md`。
+* 为需要命令入口的 skill 生成 `dist/cli.bundle.js`。
+* 复制发布所需的 `dist/`、`scripts/`、`references/` 和 `runtime/`。
+* 检查 CLI bundle 和 connector runtime 的必要文件。
+* 排除 `.gradle`、`build` 等 runtime 缓存产物。
+
+`pnpm test` 当前执行 skill frontmatter 校验和分发构建校验。
+
+## 发布与接入
+
+把 `dist-skills/` 下的子目录作为独立 skill 发布或安装到目标 agent skills 目录：
+
+```text
+dist-skills/instagram-warmup-orchestrator
+dist-skills/instagram-connector
+dist-skills/instagram-aiograpi-rest
+dist-skills/instagram-profile-setup
+dist-skills/instagram-video-interaction
 ```
 
-只测试 aiograpi-rest provider：
+agent 接入时先读取目标目录中的 `SKILL.md`。如果 `SKILL.md` 指向 `references/`，只在对应场景需要时读取相关 reference。
 
-```bash
-pnpm --filter @instagram-skills/instagram-aiograpi-rest test
+需要真实执行时，在对应 skill 目录内调用 CLI：
+
+```powershell
+node .\dist\cli.bundle.js list-tools
+node .\dist\cli.bundle.js invoke --action <action-name> --input-json input.json
 ```
 
-检查本地 aiograpi-rest OpenAPI：
+`--input-json` 通常支持内联 JSON、JSON 文件路径和 stdin `-`。不同 skill 的 action、参数和副作用约束以各自 `SKILL.md` 为准。
 
-```bash
-pnpm --filter @instagram-skills/instagram-aiograpi-rest smoke:local
+TS、Java、Python 或其他语言开发的 agent 都可以通过“启动 CLI 进程 + JSON 输入输出”的方式使用这些 skills；`instagram-aiograpi-rest` 还可以通过 HTTP 服务接入。
+
+## 当前环境安装示例
+
+本仓库提供一个面向当前开发环境的辅助安装脚本：
+
+```powershell
+pnpm install:codex-skills
 ```
 
-`smoke:local` 默认访问 `http://localhost:8005`。如需覆盖：
+该命令会先生成 `dist-skills/`，再把 5 个发布目录复制到 `$CODEX_HOME/skills`。这是当前环境的安装示例，不限制其他 agent 的安装路径；其他 agent 复制到自身 agent skills 目录即可。
 
-```bash
-$env:AIOGRAPI_REST_BASE_URL="http://localhost:8005"
-pnpm --filter @instagram-skills/instagram-aiograpi-rest smoke:local
-```
+## 关键约束
 
-## 当前验收重点
-
-* 主入口不依赖 Cordis，Cordis 入口只从 `./plugin` 子路径导出。
-* 不支持能力必须明确抛出 `NOT_IMPLEMENTED` 或 `unsupported_operation`，不能返回假成功。
-* 业务 skill 包必须提供职责明确的 `SKILL.md`。
-* 业务 skill 不直接调用 provider、MCP 或 `ctx.instagram`。
-* 结构化输出需要能服务日志、benchmark 和 agent eval。
+* skill 文档必须有 YAML frontmatter。
+* 发布包不能依赖原始 monorepo 路径。
+* CLI 示例必须使用相对当前 skill 目录的路径。
+* 敏感信息优先通过 JSON 文件或 stdin 输入，不写入命令行历史。
+* `sessionRef`、账号密码、cookie、token 等敏感字段只由 agent 服务或 provider 执行层处理，业务 skill 不解析、不打印。
+* 修改资料、点赞、评论、发布等副作用动作必须由 agent 服务取得明确授权后执行。
 
 ## 相关文档
 
 | 文档 | 说明 |
 | --- | --- |
-| `../docs/Instagram养号skills三天实现计划.md` | 三天分阶段实现计划 |
 | `../docs/plans/Instagram养号skills包设计总览.md` | 总体分层、兼容方式、包职责 |
 | `../docs/plans/sessionRef设计与实现方案.md` | sessionRef 和 SQLite 存储设计 |
-| `../docs/plans/instagram-aiograpi-rest包设计与实现方案.md` | aiograpi-rest provider 方案 |
-| `../docs/plans/instagram-official-api包设计与实现方案.md` | Zernio 官方发布 provider 方案 |
+| `../docs/benchmark/Instagram养号skills benchmark规范.md` | benchmark 任务、过程要求、结果要求和评分规则 |

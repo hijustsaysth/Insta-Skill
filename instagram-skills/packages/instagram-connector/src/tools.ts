@@ -10,7 +10,8 @@ export type ConnectorToolName =
   | "instagram.reel.like"
   | "instagram.reel.comment"
   | "instagram.reel.next"
-  | "instagram.reels.engage_workflow";
+  | "instagram.reels.engage_workflow"
+  | "instagram.profile.update";
 
 export interface JsonObjectSchema {
   type: "object";
@@ -84,6 +85,18 @@ const engageWorkflowInputSchema: JsonObjectSchema = {
   additionalProperties: false
 };
 
+const profileUpdateInputSchema: JsonObjectSchema = {
+  type: "object",
+  properties: {
+    displayName: { type: "string" },
+    username: { type: "string" },
+    bio: { type: "string" },
+    avatarUrl: { type: "string" },
+    packageName: { type: "string" }
+  },
+  additionalProperties: false
+};
+
 export const connectorTools: ConnectorToolDefinition[] = [
   { name: "instagram.app.open", description: "打开 Instagram App", inputSchema: emptyInputSchema, sideEffect: false },
   { name: "instagram.debug.snapshot", description: "采集当前 UI XML 快照", inputSchema: emptyInputSchema, sideEffect: false },
@@ -106,6 +119,12 @@ export const connectorTools: ConnectorToolDefinition[] = [
     description: "执行搜索、打开 Reel，并按传入时长连续观看多条视频的组合流程",
     inputSchema: engageWorkflowInputSchema,
     sideEffect: false
+  },
+  {
+    name: "instagram.profile.update",
+    description: "修改当前已登录账号的个人资料",
+    inputSchema: profileUpdateInputSchema,
+    sideEffect: true
   }
 ];
 

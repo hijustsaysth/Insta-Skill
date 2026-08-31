@@ -1,15 +1,9 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/instagram-core" },
-    { "path": "packages/instagram-cordis" },
     { "path": "packages/instagram-aiograpi-rest" },
-    { "path": "packages/instagram-official-api" },
     { "path": "packages/instagram-connector" },
-    { "path": "packages/instagram-session-store-sqlite" },
-    { "path": "packages/instagram-account-access" },
     { "path": "packages/instagram-profile-setup" },
-    { "path": "packages/instagram-content-publish" },
     { "path": "packages/instagram-video-interaction" },
     { "path": "packages/instagram-warmup-orchestrator" }
   ]

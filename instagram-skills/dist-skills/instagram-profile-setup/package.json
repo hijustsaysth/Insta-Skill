@@ -1,0 +1,10 @@
+{
+  "name": "instagram-profile-setup",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "instagram-profile-setup": "./dist/cli.bundle.js"
+  },
+  "main": "./dist/index.js"
+}
