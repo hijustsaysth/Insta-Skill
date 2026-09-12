@@ -1061,13 +1061,11 @@ public final class InstagramConnector implements AndroidConnectorPlugin {
      * 作用：按顺序查询多个 locator。
      */
     private JSONObject findAny(MobileRuntime runtime, List<JSONObject> selectors) throws Exception {
-        for (JSONObject selector : selectors) {
-            JSONObject result = query(runtime, selector);
-            JSONArray candidates = result.optJSONArray("candidates");
-            if (candidates != null && candidates.length() > 0) {
-                return new JSONObject(candidates.getJSONObject(0).toString())
-                        .put("pageFingerprint", result.getString("pageFingerprint"));
-            }
+        JSONObject result = query(runtime, selectors);
+        JSONArray candidates = result.optJSONArray("candidates");
+        if (candidates != null && candidates.length() > 0) {
+            return new JSONObject(candidates.getJSONObject(0).toString())
+                    .put("pageFingerprint", result.getString("pageFingerprint"));
         }
         return null;
     }
@@ -1212,14 +1210,26 @@ public final class InstagramConnector implements AndroidConnectorPlugin {
     }
 
     /**
-     * 输入：Runtime 和 selector。
+     * 输入：Runtime 和按优先级排列的 selectors。
      * 输出：Runtime query 结果 JSON。
-     * 作用：执行无障碍节点查询。
+     * 作用：按 Runtime 显式能力选择批量查询或兼容的单 selector 查询。
      */
-    private JSONObject query(MobileRuntime runtime, JSONObject selector) throws Exception {
-        return require(
-                runtime.query(new JSONObject().put("selector", selector).toString()),
-                "INSTAGRAM_QUERY_FAILED");
+    private JSONObject query(MobileRuntime runtime, List<JSONObject> selectors) throws Exception {
+        if (BatchQueryCapability.supports(runtime)) {
+            return require(
+                    runtime.query(new JSONObject().put("selectors", new JSONArray(selectors)).toString()),
+                    "INSTAGRAM_QUERY_FAILED");
+        }
+
+        JSONObject result = null;
+        for (JSONObject selector : selectors) {
+            result = require(
+                    runtime.query(new JSONObject().put("selector", selector).toString()),
+                    "INSTAGRAM_QUERY_FAILED");
+            JSONArray candidates = result.optJSONArray("candidates");
+            if (candidates != null && candidates.length() > 0) return result;
+        }
+        return result;
     }
 
     /**

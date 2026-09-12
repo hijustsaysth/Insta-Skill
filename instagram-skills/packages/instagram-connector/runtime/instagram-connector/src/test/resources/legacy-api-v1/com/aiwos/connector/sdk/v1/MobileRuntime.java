@@ -5,15 +5,6 @@ package com.aiwos.connector.sdk.v1;
  * so that the ABI can evolve without exposing Android framework objects.
  */
 public interface MobileRuntime {
-    /**
-     * 输入：无。
-     * 输出：是否支持一次 query 传入多个 selectors。
-     * 作用：在保持 Plugin API v1 和旧运行时兼容的前提下显式协商批量查询。
-     */
-    default boolean supportsBatchQuery() {
-        return false;
-    }
-
     CapabilityResult openApp(String requestJson);
     CapabilityResult snapshot(String requestJson);
     CapabilityResult query(String requestJson);
