@@ -114,6 +114,7 @@ public final class LocalAdbMobileRuntimeTest {
         JSONObject output = new JSONObject(result.payloadJson());
         List<String> commands = Files.readAllLines(log, StandardCharsets.UTF_8);
 
+        assertTrue(runtime.supportsBatchQuery());
         assertTrue(result.detail(), result.isOk());
         assertEquals(1, output.getJSONArray("candidates").length());
         assertEquals(1, commands.stream().filter(line -> line.contains("uiautomator dump")).count());

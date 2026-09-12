@@ -1212,12 +1212,24 @@ public final class InstagramConnector implements AndroidConnectorPlugin {
     /**
      * 输入：Runtime 和按优先级排列的 selectors。
      * 输出：Runtime query 结果 JSON。
-     * 作用：一次查询同一页面的候选节点，避免为每个 selector 重复采集 UI。
+     * 作用：按 Runtime 显式能力选择批量查询或兼容的单 selector 查询。
      */
     private JSONObject query(MobileRuntime runtime, List<JSONObject> selectors) throws Exception {
-        return require(
-                runtime.query(new JSONObject().put("selectors", new JSONArray(selectors)).toString()),
-                "INSTAGRAM_QUERY_FAILED");
+        if (runtime.supportsBatchQuery()) {
+            return require(
+                    runtime.query(new JSONObject().put("selectors", new JSONArray(selectors)).toString()),
+                    "INSTAGRAM_QUERY_FAILED");
+        }
+
+        JSONObject result = null;
+        for (JSONObject selector : selectors) {
+            result = require(
+                    runtime.query(new JSONObject().put("selector", selector).toString()),
+                    "INSTAGRAM_QUERY_FAILED");
+            JSONArray candidates = result.optJSONArray("candidates");
+            if (candidates != null && candidates.length() > 0) return result;
+        }
+        return result;
     }
 
     /**

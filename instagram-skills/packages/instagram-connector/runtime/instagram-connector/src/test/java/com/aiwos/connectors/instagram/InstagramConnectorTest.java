@@ -47,13 +47,42 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void searchOpenClicksSearchTab() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.search.open", new JSONObject());
 
         assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
         assertEquals(List.of("query", "click", "query"), runtime.calls);
         assertEquals(List.of(2, 1), runtime.querySelectorCounts);
+        assertTrue(runtime.queryRequests.get(0).has("selectors"));
+        JSONArray searchSelectors = runtime.queryRequests.get(0).getJSONArray("selectors");
+        assertEquals("com.instagram.android:id/search_tab",
+                searchSelectors.getJSONObject(0).getString("resourceId"));
+        assertEquals("Search and explore",
+                searchSelectors.getJSONObject(1).getString("contentDescription"));
         assertEquals("/tabs/search", runtime.lastClick.getString("targetPath"));
+    }
+
+    /**
+     * 输入：只接受旧 selector 载荷的 Runtime。
+     * 输出：search.open 仍成功，且不会发送 selectors 字段。
+     * 作用：确认 Plugin API v1 的旧 Runtime 不会被批量查询优化破坏。
+     */
+    @Test
+    public void searchOpenKeepsLegacySingleSelectorQueryContract() throws Exception {
+        FakeRuntime runtime = new FakeRuntime();
+        runtime.hidePrimarySearchTab = true;
+        ConnectorResult result = execute(runtime, "instagram.search.open", new JSONObject());
+
+        assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
+        assertFalse(runtime.supportsBatchQuery());
+        assertEquals(List.of(1, 1, 1), runtime.querySelectorCounts);
+        assertTrue(runtime.queryRequests.stream().allMatch(request -> request.has("selector")));
+        assertTrue(runtime.queryRequests.stream().noneMatch(request -> request.has("selectors")));
+        assertEquals("com.instagram.android:id/search_tab",
+                runtime.queryRequests.get(0).getJSONObject("selector").getString("resourceId"));
+        assertEquals("Search and explore",
+                runtime.queryRequests.get(1).getJSONObject("selector").getString("contentDescription"));
+        assertEquals("/tabs/search-fallback", runtime.lastClick.getString("targetPath"));
     }
 
     /**
@@ -63,7 +92,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void searchOpenBatchesCandidateValidationPerRetry() {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.returnCandidates = false;
         ConnectorResult result = execute(runtime, "instagram.search.open", new JSONObject());
 
@@ -75,13 +104,30 @@ public final class InstagramConnectorTest {
     }
 
     /**
+     * 输入：query capability 返回失败。
+     * 输出：立即保留 Runtime 错误，不继续重试或视觉兜底。
+     * 作用：确认批量查询不会掩盖真实运行时失败。
+     */
+    @Test
+    public void searchOpenStopsOnBatchQueryFailure() {
+        FakeRuntime runtime = new BatchFakeRuntime();
+        runtime.failQuery = true;
+        ConnectorResult result = execute(runtime, "instagram.search.open", new JSONObject());
+
+        assertEquals(ConnectorResult.Status.FAILED, result.status());
+        assertEquals("UI_QUERY_FAILED", result.code());
+        assertEquals(1, runtime.calls.stream().filter("query"::equals).count());
+        assertEquals(0, runtime.calls.stream().filter("capture"::equals).count());
+    }
+
+    /**
      * 输入：FakeRuntime 当前截图。
      * 输出：debug.ocr 成功断言。
      * 作用：确认调试 OCR 能力会透传给 Runtime。
      */
     @Test
     public void debugOcrCallsRuntimeOcr() {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.debug.ocr", new JSONObject());
 
         assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
@@ -95,7 +141,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void debugSnapshotDoesNotIncludeActivityByDefault() {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.debug.snapshot", new JSONObject());
 
         assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
@@ -111,7 +157,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void debugSnapshotCanIncludeActivityWhenRequested() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.debug.snapshot", new JSONObject()
                 .put("includeActivity", true));
 
@@ -128,7 +174,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void debugSnapshotFallsBackToCaptureWhenSnapshotUnavailable() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.failSnapshot = true;
         ConnectorResult result = execute(runtime, "instagram.debug.snapshot", new JSONObject());
         JSONObject output = new JSONObject(result.outputJson());
@@ -148,7 +194,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void debugSnapshotStopsWhenDeadlineExceeded() {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = executeWithDeadline(
                 runtime,
                 "instagram.debug.snapshot",
@@ -168,7 +214,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void executeEmitsConsoleDiagnostics() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         PrintStream previousErr = System.err;
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         System.setProperty("instagram.connector.consoleLog", "true");
@@ -190,13 +236,30 @@ public final class InstagramConnectorTest {
     }
 
     /**
+     * 输入：开启日志包装的批量 Runtime。
+     * 输出：包装后仍声明支持批量 query。
+     * 作用：确认诊断拦截层不会意外关闭性能优化能力。
+     */
+    @Test
+    public void consoleLoggerPreservesBatchQueryCapability() {
+        System.setProperty("instagram.connector.consoleLog", "true");
+        try {
+            MobileRuntime wrapped = InstagramConnectorConsoleLogger.fromSettings("job-1")
+                    .wrap(new BatchFakeRuntime());
+            assertTrue(wrapped.supportsBatchQuery());
+        } finally {
+            System.clearProperty("instagram.connector.consoleLog");
+        }
+    }
+
+    /**
      * 输入：默认 collect_signals 参数。
      * 输出：单帧采样结果。
      * 作用：确认默认返回页面文本、截图和 OCR 文本。
      */
     @Test
     public void reelCollectSignalsUsesSingleFrameByDefault() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.currentPageFingerprint = "instagram-reel-page";
         ConnectorResult result = execute(runtime, "instagram.reel.collect_signals", new JSONObject());
         JSONObject output = new JSONObject(result.outputJson());
@@ -218,7 +281,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelCollectSignalsFallsBackToVisualWhenSnapshotUnavailable() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.failSnapshot = true;
         ConnectorResult result = execute(runtime, "instagram.reel.collect_signals", new JSONObject());
         JSONObject output = new JSONObject(result.outputJson());
@@ -239,7 +302,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelCollectSignalsSupportsMultipleFrames() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.reel.collect_signals", new JSONObject()
                 .put("frameCount", 2)
                 .put("intervalMs", 1)
@@ -263,7 +326,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void searchInputSubmitsKeyword() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.currentPageFingerprint = "instagram-search-page";
         ConnectorResult result = execute(runtime, "instagram.search.input", new JSONObject()
                 .put("keyword", "exo"));
@@ -281,7 +344,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void searchOpenFirstReelClicksFirstVideo() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.currentPageFingerprint = "instagram-search-results";
         ConnectorResult result = execute(runtime, "instagram.search.open_first_reel", new JSONObject());
 
@@ -297,7 +360,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void searchOpenFirstReelFallsBackToCaptureWhenSnapshotUnavailable() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.currentPageFingerprint = "instagram-search-results";
         runtime.failSnapshot = true;
         ConnectorResult result = execute(runtime, "instagram.search.open_first_reel", new JSONObject());
@@ -318,7 +381,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelLikeChecksStateClicksAndRechecks() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.currentPageFingerprint = "instagram-reel-page";
         ConnectorResult result = execute(runtime, "instagram.reel.like", new JSONObject());
         JSONObject output = new JSONObject(result.outputJson());
@@ -337,7 +400,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelLikeSkipsWhenAlreadyLiked() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.currentPageFingerprint = "instagram-reel-page";
         runtime.liked = true;
         ConnectorResult result = execute(runtime, "instagram.reel.like", new JSONObject());
@@ -356,7 +419,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelCommentInputsTextAndClicksPost() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.currentPageFingerprint = "instagram-reel-page";
         ConnectorResult result = execute(runtime, "instagram.reel.comment", new JSONObject()
                 .put("commentText", "Great content"));
@@ -378,7 +441,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelNextScrollsForward() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.reel.next", new JSONObject());
 
         assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
@@ -397,7 +460,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelNextSucceedsWhenUiFingerprintDoesNotChange() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.keepFingerprintAfterScroll = true;
         ConnectorResult result = execute(runtime, "instagram.reel.next", new JSONObject());
         JSONObject output = new JSONObject(result.outputJson());
@@ -415,7 +478,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void missingKeywordFailsBeforeTouchingDevice() {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.search.input", new JSONObject());
 
         assertEquals(ConnectorResult.Status.FAILED, result.status());
@@ -430,7 +493,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void missingCommentTextFailsBeforeTouchingDevice() {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.reel.comment", new JSONObject());
 
         assertEquals(ConnectorResult.Status.FAILED, result.status());
@@ -445,7 +508,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void profileUpdateEmptyInputFailsBeforeTouchingDevice() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.profile.update", new JSONObject()
                 .put("displayName", " ")
                 .put("username", "")
@@ -464,7 +527,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void profileUpdateDisplayNameOnlyUpdatesNameField() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.profile.update", new JSONObject()
                 .put("displayName", "Tiny Paws"));
         JSONObject output = new JSONObject(result.outputJson());
@@ -494,7 +557,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void profileUpdateUsernameAndBioUpdatesOnlyThoseFields() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.profile.update", new JSONObject()
                 .put("username", "tinypaws")
                 .put("bio", "Daily cozy pet moments."));
@@ -523,7 +586,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void profileUpdateBioUsesMatchingInlineFieldWhenFormStaysOpen() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.keepProfileEditorInline = true;
         ConnectorResult result = execute(runtime, "instagram.profile.update", new JSONObject()
                 .put("bio", "hahaha"));
@@ -545,7 +608,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void profileUpdateAvatarUsesGalleryFlow() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.profile.update", new JSONObject()
                 .put("avatarUrl", "https://example.com/avatar.jpg"));
         JSONObject output = new JSONObject(result.outputJson());
@@ -568,7 +631,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void profileUpdateAvatarAcceptsLocalImagePath() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.profile.update", new JSONObject()
                 .put("avatarUrl", "F:\\avatar\\profile.jpg"));
 
@@ -585,7 +648,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void profileUpdateFailsWhenEditProfileButtonMissing() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.hideEditProfile = true;
         ConnectorResult result = execute(runtime, "instagram.profile.update", new JSONObject()
                 .put("displayName", "Tiny Paws"));
@@ -602,7 +665,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelLikeDoesNotClickWhenStateUnknown() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         runtime.returnCandidates = false;
         ConnectorResult result = execute(runtime, "instagram.reel.like", new JSONObject());
         JSONObject output = new JSONObject(result.outputJson());
@@ -622,7 +685,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelsEngageWorkflowSearchesScrollsOpensAndContinuouslyWatches() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.reels.engage_workflow", new JSONObject()
                 .put("keyword", "fitness")
                 .put("preOpenScrollCount", 2)
@@ -662,7 +725,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelsEngageWorkflowRequiresExplicitWatchDurations() throws Exception {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.reels.engage_workflow", new JSONObject()
                 .put("keyword", "fitness")
                 .put("totalWatchMs", 3));
@@ -680,7 +743,7 @@ public final class InstagramConnectorTest {
      */
     @Test
     public void reelsEngageWorkflowRequiresKeywordBeforeTouchingDevice() {
-        FakeRuntime runtime = new FakeRuntime();
+        FakeRuntime runtime = new BatchFakeRuntime();
         ConnectorResult result = execute(runtime, "instagram.reels.engage_workflow", new JSONObject());
 
         assertEquals(ConnectorResult.Status.FAILED, result.status());
@@ -707,7 +770,19 @@ public final class InstagramConnectorTest {
                 "job-1", action, input.toString(), "", deadlineEpochMillis));
     }
 
-    private static final class FakeRuntime implements MobileRuntime {
+    private static final class BatchFakeRuntime extends FakeRuntime {
+        /**
+         * 输入：无。
+         * 输出：true。
+         * 作用：让性能回归测试显式启用批量 query 协议。
+         */
+        @Override
+        public boolean supportsBatchQuery() {
+            return true;
+        }
+    }
+
+    private static class FakeRuntime implements MobileRuntime {
         private final List<String> calls = new ArrayList<>();
         private final List<String> clickPaths = new ArrayList<>();
         private final List<String> inputTexts = new ArrayList<>();
@@ -715,8 +790,10 @@ public final class InstagramConnectorTest {
         private final List<Boolean> inputReplaceFlags = new ArrayList<>();
         private final List<JSONObject> checkpointRequests = new ArrayList<>();
         private final List<Integer> querySelectorCounts = new ArrayList<>();
+        private final List<JSONObject> queryRequests = new ArrayList<>();
         private String currentPageFingerprint = "instagram-home";
         private boolean returnCandidates = true;
+        private boolean hidePrimarySearchTab;
         private boolean hideEditProfile;
         private boolean keepProfileEditorInline;
         private JSONObject lastClick;
@@ -730,6 +807,7 @@ public final class InstagramConnectorTest {
         private int scrollCount;
         private boolean keepFingerprintAfterScroll;
         private boolean failSnapshot;
+        private boolean failQuery;
 
         /**
          * 输入：openApp 请求。
@@ -767,13 +845,18 @@ public final class InstagramConnectorTest {
         public CapabilityResult query(String requestJson) {
             calls.add("query");
             JSONObject request = jsonObject(requestJson);
+            queryRequests.add(request);
             JSONArray selectors = request.optJSONArray("selectors");
+            if (selectors != null && !supportsBatchQuery()) {
+                throw new AssertionError("legacy query 不支持 selectors");
+            }
             if (selectors == null) {
                 JSONObject selector = request.optJSONObject("selector");
                 if (selector == null) throw new AssertionError("query 请求缺少 selector");
                 selectors = new JSONArray().put(selector);
             }
             querySelectorCounts.add(selectors.length());
+            if (failQuery) return CapabilityResult.error("UI_QUERY_FAILED", "query failed");
             JSONArray candidates = new JSONArray();
             if (returnCandidates) {
                 for (int index = 0; index < selectors.length(); index++) {
@@ -800,7 +883,9 @@ public final class InstagramConnectorTest {
             }
             String path = lastClick.optString("targetPath");
             clickPaths.add(path);
-            if ("/tabs/search".equals(path)) currentPageFingerprint = "instagram-search-page";
+            if ("/tabs/search".equals(path) || "/tabs/search-fallback".equals(path)) {
+                currentPageFingerprint = "instagram-search-page";
+            }
             if ("/tabs/profile".equals(path)) currentPageFingerprint = "instagram-profile";
             if ("/profile/edit".equals(path)) currentPageFingerprint = "instagram-edit-profile";
             if ("/profile/full-name".equals(path)) {
@@ -977,10 +1062,10 @@ public final class InstagramConnectorTest {
             String textContains = selector.optString("textContains");
             String contentDescription = selector.optString("contentDescription");
             String descriptionContains = selector.optString("descriptionContains");
-            if ("com.instagram.android:id/search_tab".equals(resourceId)
-                    || "Search and explore".equals(contentDescription)) {
+            if (!hidePrimarySearchTab && "com.instagram.android:id/search_tab".equals(resourceId)) {
                 return node("/tabs/search");
             }
+            if ("Search and explore".equals(contentDescription)) return node("/tabs/search-fallback");
             if ("com.instagram.android:id/action_bar_search_edit_text".equals(resourceId)) {
                 return node("/search/input");
             }

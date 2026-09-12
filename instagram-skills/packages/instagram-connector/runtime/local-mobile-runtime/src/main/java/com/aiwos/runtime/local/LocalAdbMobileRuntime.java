@@ -43,6 +43,16 @@ public final class LocalAdbMobileRuntime implements MobileRuntime {
     }
 
     /**
+     * 输入：无。
+     * 输出：true。
+     * 作用：声明本地 ADB Runtime 可以用一次 UI XML 处理同一组 selectors。
+     */
+    @Override
+    public boolean supportsBatchQuery() {
+        return true;
+    }
+
+    /**
      * 输入：openApp 请求 JSON。
      * 输出：打开 App 的能力结果。
      * 作用：通过 ADB monkey 启动目标 App。

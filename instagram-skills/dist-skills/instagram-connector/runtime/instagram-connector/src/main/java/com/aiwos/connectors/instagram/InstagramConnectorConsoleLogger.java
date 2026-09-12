@@ -138,6 +138,16 @@ public final class InstagramConnectorConsoleLogger {
             this.delegate = Objects.requireNonNull(delegate, "delegate");
         }
 
+        /**
+         * 输入：无。
+         * 输出：被包装 Runtime 的批量查询能力。
+         * 作用：避免开启日志后丢失 Runtime 已声明的能力。
+         */
+        @Override
+        public boolean supportsBatchQuery() {
+            return delegate.supportsBatchQuery();
+        }
+
         @Override
         public CapabilityResult openApp(String requestJson) {
             return capability("openApp", requestJson, () -> delegate.openApp(requestJson));
