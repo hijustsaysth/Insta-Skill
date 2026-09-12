@@ -8,6 +8,7 @@ import com.aiwos.connector.sdk.v1.CapabilityResult;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -91,6 +92,32 @@ public final class LocalAdbMobileRuntimeTest {
         assertTrue(logText.contains("shell input keycombination KEYCODE_CTRL_LEFT KEYCODE_A"));
         assertTrue(logText.contains("shell input keyevent KEYCODE_DEL"));
         assertTrue(logText.contains("shell input text New%sName"));
+    }
+
+    /**
+     * 输入：第二个 selector 才命中的批量 query。
+     * 输出：按 selector 优先级返回候选，且只执行一次 UI dump。
+     * 作用：防止同一轮候选校验重复采集昂贵的 UI XML。
+     */
+    @Test
+    public void queryBatchesSelectorsIntoSingleSnapshot() throws Exception {
+        Path dir = Files.createTempDirectory("aiwos-local-runtime-test");
+        Path log = dir.resolve("adb.log");
+        Path adb = fakeAdb(dir, log);
+        LocalAdbMobileRuntime runtime = new LocalAdbMobileRuntime(config(adb, dir));
+
+        CapabilityResult result = runtime.query(new JSONObject()
+                .put("selectors", List.of(
+                        new JSONObject().put("resourceId", "missing"),
+                        new JSONObject().put("resourceId", "com.instagram.android:id/profile_field")))
+                .toString());
+        JSONObject output = new JSONObject(result.payloadJson());
+        List<String> commands = Files.readAllLines(log, StandardCharsets.UTF_8);
+
+        assertTrue(result.detail(), result.isOk());
+        assertEquals(1, output.getJSONArray("candidates").length());
+        assertEquals(1, commands.stream().filter(line -> line.contains("uiautomator dump")).count());
+        assertEquals(1, commands.stream().filter(line -> line.startsWith("pull ")).count());
     }
 
     /**

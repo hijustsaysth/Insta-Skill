@@ -1061,13 +1061,11 @@ public final class InstagramConnector implements AndroidConnectorPlugin {
      * 作用：按顺序查询多个 locator。
      */
     private JSONObject findAny(MobileRuntime runtime, List<JSONObject> selectors) throws Exception {
-        for (JSONObject selector : selectors) {
-            JSONObject result = query(runtime, selector);
-            JSONArray candidates = result.optJSONArray("candidates");
-            if (candidates != null && candidates.length() > 0) {
-                return new JSONObject(candidates.getJSONObject(0).toString())
-                        .put("pageFingerprint", result.getString("pageFingerprint"));
-            }
+        JSONObject result = query(runtime, selectors);
+        JSONArray candidates = result.optJSONArray("candidates");
+        if (candidates != null && candidates.length() > 0) {
+            return new JSONObject(candidates.getJSONObject(0).toString())
+                    .put("pageFingerprint", result.getString("pageFingerprint"));
         }
         return null;
     }
@@ -1212,13 +1210,13 @@ public final class InstagramConnector implements AndroidConnectorPlugin {
     }
 
     /**
-     * 输入：Runtime 和 selector。
+     * 输入：Runtime 和按优先级排列的 selectors。
      * 输出：Runtime query 结果 JSON。
-     * 作用：执行无障碍节点查询。
+     * 作用：一次查询同一页面的候选节点，避免为每个 selector 重复采集 UI。
      */
-    private JSONObject query(MobileRuntime runtime, JSONObject selector) throws Exception {
+    private JSONObject query(MobileRuntime runtime, List<JSONObject> selectors) throws Exception {
         return require(
-                runtime.query(new JSONObject().put("selector", selector).toString()),
+                runtime.query(new JSONObject().put("selectors", new JSONArray(selectors)).toString()),
                 "INSTAGRAM_QUERY_FAILED");
     }
 

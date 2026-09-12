@@ -90,22 +90,32 @@ public final class LocalAdbMobileRuntime implements MobileRuntime {
     }
 
     /**
-     * 输入：query 请求 JSON。
+     * 输入：单个 selector 或按优先级排列的 selectors。
      * 输出：匹配 selector 的候选节点。
-     * 作用：基于最新 UI XML 查询可操作控件。
+     * 作用：基于一次最新 UI XML 查询可操作控件，避免候选 selector 重复 dump。
      */
     @Override
     public CapabilityResult query(String requestJson) {
         return runCapability("UI_QUERY_FAILED", () -> {
             JSONObject input = json(requestJson);
-            JSONObject selector = input.optJSONObject("selector");
-            if (selector == null) selector = input;
+            JSONArray requestedSelectors = input.optJSONArray("selectors");
+            JSONArray selectors = requestedSelectors == null
+                    ? new JSONArray().put(input.optJSONObject("selector") == null
+                            ? input
+                            : input.getJSONObject("selector"))
+                    : requestedSelectors;
 
             UiSnapshot snapshot = refreshSnapshot();
             JSONArray candidates = new JSONArray();
-            for (UiNode node : snapshot.nodes()) {
-                if (matches(node, selector)) {
-                    candidates.put(node.toCandidateJson(snapshot.pageFingerprint()));
+            for (int selectorIndex = 0; selectorIndex < selectors.length(); selectorIndex++) {
+                JSONObject selector = selectors.getJSONObject(selectorIndex);
+                for (UiNode node : snapshot.nodes()) {
+                    if (matches(node, selector)) {
+                        candidates.put(node.toCandidateJson(snapshot.pageFingerprint()));
+                    }
+                }
+                if (candidates.length() > 0) {
+                    break;
                 }
             }
             return CapabilityResult.ok(new JSONObject()

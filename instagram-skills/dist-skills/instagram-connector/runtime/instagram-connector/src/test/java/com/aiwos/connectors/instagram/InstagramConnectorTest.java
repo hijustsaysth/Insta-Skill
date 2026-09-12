@@ -52,7 +52,26 @@ public final class InstagramConnectorTest {
 
         assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
         assertEquals(List.of("query", "click", "query"), runtime.calls);
+        assertEquals(List.of(2, 1), runtime.querySelectorCounts);
         assertEquals("/tabs/search", runtime.lastClick.getString("targetPath"));
+    }
+
+    /**
+     * 输入：所有 Search tab locator 都不匹配的页面。
+     * 输出：每轮重试只发起一次批量 query。
+     * 作用：确认候选 selector 共享页面采集，但重试边界仍会重新校验。
+     */
+    @Test
+    public void searchOpenBatchesCandidateValidationPerRetry() {
+        FakeRuntime runtime = new FakeRuntime();
+        runtime.returnCandidates = false;
+        ConnectorResult result = execute(runtime, "instagram.search.open", new JSONObject());
+
+        assertEquals(ConnectorResult.Status.FAILED, result.status());
+        assertEquals("INSTAGRAM_VISUAL_COORDINATE_UNSUPPORTED", result.code());
+        assertEquals(3, runtime.calls.stream().filter("query"::equals).count());
+        assertEquals(List.of(2, 2, 2), runtime.querySelectorCounts);
+        assertEquals(1, runtime.calls.stream().filter("capture"::equals).count());
     }
 
     /**
@@ -592,7 +611,8 @@ public final class InstagramConnectorTest {
         assertTrue(!output.getBoolean("performed"));
         assertEquals("state_unknown_noop", output.getString("strategy"));
         assertEquals(1, runtime.calls.stream().filter("capture"::equals).count());
-        assertEquals(4, runtime.calls.stream().filter("query"::equals).count());
+        assertEquals(1, runtime.calls.stream().filter("query"::equals).count());
+        assertEquals(List.of(4), runtime.querySelectorCounts);
     }
 
     /**
@@ -694,6 +714,7 @@ public final class InstagramConnectorTest {
         private final List<String> inputTargetPaths = new ArrayList<>();
         private final List<Boolean> inputReplaceFlags = new ArrayList<>();
         private final List<JSONObject> checkpointRequests = new ArrayList<>();
+        private final List<Integer> querySelectorCounts = new ArrayList<>();
         private String currentPageFingerprint = "instagram-home";
         private boolean returnCandidates = true;
         private boolean hideEditProfile;
@@ -745,11 +766,23 @@ public final class InstagramConnectorTest {
         @Override
         public CapabilityResult query(String requestJson) {
             calls.add("query");
-            JSONObject selector = jsonObject(requestJson).optJSONObject("selector");
-            if (selector == null) throw new AssertionError("query 请求缺少 selector");
-            JSONObject candidate = match(selector);
+            JSONObject request = jsonObject(requestJson);
+            JSONArray selectors = request.optJSONArray("selectors");
+            if (selectors == null) {
+                JSONObject selector = request.optJSONObject("selector");
+                if (selector == null) throw new AssertionError("query 请求缺少 selector");
+                selectors = new JSONArray().put(selector);
+            }
+            querySelectorCounts.add(selectors.length());
             JSONArray candidates = new JSONArray();
-            if (returnCandidates && candidate != null) candidates.put(candidate);
+            if (returnCandidates) {
+                for (int index = 0; index < selectors.length(); index++) {
+                    JSONObject candidate = match(selectors.getJSONObject(index));
+                    if (candidate == null) continue;
+                    candidates.put(candidate);
+                    break;
+                }
+            }
             return ok(json("pageFingerprint", currentPageFingerprint, "candidates", candidates));
         }
 
