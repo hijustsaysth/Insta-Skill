@@ -145,7 +145,7 @@ public final class InstagramConnectorConsoleLogger {
          */
         @Override
         public boolean supportsBatchQuery() {
-            return delegate.supportsBatchQuery();
+            return BatchQueryCapability.supports(delegate);
         }
 
         @Override

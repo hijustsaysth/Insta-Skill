@@ -121,6 +121,21 @@ public final class InstagramConnectorTest {
     }
 
     /**
+     * 输入：批量能力方法抛错的 Runtime。
+     * 输出：search.open 通过旧单 selector 协议成功。
+     * 作用：确认能力探测异常不会影响业务操作结果。
+     */
+    @Test
+    public void searchOpenFallsBackWhenBatchCapabilityThrows() throws Exception {
+        FakeRuntime runtime = new ThrowingBatchCapabilityRuntime();
+        ConnectorResult result = execute(runtime, "instagram.search.open", new JSONObject());
+
+        assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
+        assertTrue(runtime.queryRequests.stream().allMatch(request -> request.has("selector")));
+        assertTrue(runtime.queryRequests.stream().noneMatch(request -> request.has("selectors")));
+    }
+
+    /**
      * 输入：FakeRuntime 当前截图。
      * 输出：debug.ocr 成功断言。
      * 作用：确认调试 OCR 能力会透传给 Runtime。
@@ -247,6 +262,23 @@ public final class InstagramConnectorTest {
             MobileRuntime wrapped = InstagramConnectorConsoleLogger.fromSettings("job-1")
                     .wrap(new BatchFakeRuntime());
             assertTrue(wrapped.supportsBatchQuery());
+        } finally {
+            System.clearProperty("instagram.connector.consoleLog");
+        }
+    }
+
+    /**
+     * 输入：开启日志包装的 legacy Runtime。
+     * 输出：包装后仍判定为不支持批量 query。
+     * 作用：确认日志层不会把默认关闭能力误报为开启。
+     */
+    @Test
+    public void consoleLoggerPreservesLegacyQueryCapability() {
+        System.setProperty("instagram.connector.consoleLog", "true");
+        try {
+            MobileRuntime wrapped = InstagramConnectorConsoleLogger.fromSettings("job-1")
+                    .wrap(new FakeRuntime());
+            assertFalse(wrapped.supportsBatchQuery());
         } finally {
             System.clearProperty("instagram.connector.consoleLog");
         }
@@ -779,6 +811,18 @@ public final class InstagramConnectorTest {
         @Override
         public boolean supportsBatchQuery() {
             return true;
+        }
+    }
+
+    private static final class ThrowingBatchCapabilityRuntime extends FakeRuntime {
+        /**
+         * 输入：无。
+         * 输出：不返回。
+         * 作用：模拟能力方法在旧宿主或代理边界抛错。
+         */
+        @Override
+        public boolean supportsBatchQuery() {
+            throw new LinkageError("capability method unavailable");
         }
     }
 

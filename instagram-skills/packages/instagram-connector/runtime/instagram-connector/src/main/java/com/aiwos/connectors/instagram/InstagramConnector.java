@@ -1215,7 +1215,7 @@ public final class InstagramConnector implements AndroidConnectorPlugin {
      * 作用：按 Runtime 显式能力选择批量查询或兼容的单 selector 查询。
      */
     private JSONObject query(MobileRuntime runtime, List<JSONObject> selectors) throws Exception {
-        if (runtime.supportsBatchQuery()) {
+        if (BatchQueryCapability.supports(runtime)) {
             return require(
                     runtime.query(new JSONObject().put("selectors", new JSONArray(selectors)).toString()),
                     "INSTAGRAM_QUERY_FAILED");
