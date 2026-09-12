@@ -10,6 +10,7 @@ import com.aiwos.connector.sdk.v1.ConnectorResult;
 import com.aiwos.connector.sdk.v1.MobileRuntime;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -282,6 +283,73 @@ public final class InstagramConnectorTest {
         } finally {
             System.clearProperty("instagram.connector.consoleLog");
         }
+    }
+
+    /**
+     * 输入：启用日志的 256 次查询型 connector 执行。
+     * 输出：执行结束后 wrapper、delegate 和对应缓存项都可回收。
+     * 作用：防止进程级能力缓存按执行次数永久保留日志对象和 Runtime。
+     */
+    @Test
+    public void batchCapabilityCacheDoesNotRetainLoggedExecutions() throws Exception {
+        int initialCacheSize = BatchQueryCapability.cleanAndSize();
+        List<WeakReference<?>> references = createLoggedExecutionReferences(256);
+
+        for (int attempt = 0; attempt < 40 && hasLiveReference(references); attempt++) {
+            System.gc();
+            System.runFinalization();
+            Thread.sleep(25L);
+            BatchQueryCapability.cleanAndSize();
+        }
+
+        assertTrue("日志 wrapper 或 delegate 仍被能力缓存持有", !hasLiveReference(references));
+        assertTrue(BatchQueryCapability.cleanAndSize() <= initialCacheSize);
+    }
+
+    /**
+     * 输入：执行次数。
+     * 输出：每次执行的 logging wrapper 和 delegate 弱引用。
+     * 作用：在独立作用域创建查询缓存项，返回前释放全部强引用。
+     */
+    private List<WeakReference<?>> createLoggedExecutionReferences(int count) {
+        List<WeakReference<?>> references = new ArrayList<>();
+        PrintStream previousErr = System.err;
+        String previousLogging = System.getProperty("instagram.connector.consoleLog");
+        System.setProperty("instagram.connector.consoleLog", "true");
+        System.setErr(new PrintStream(new ByteArrayOutputStream()));
+        try {
+            for (int index = 0; index < count; index++) {
+                BatchFakeRuntime delegate = new BatchFakeRuntime();
+                MobileRuntime wrapped = InstagramConnectorConsoleLogger.fromSettings("job-" + index)
+                        .wrap(delegate);
+                ConnectorResult result = connector.execute(wrapped, new ConnectorExecutionRequest(
+                        "job-" + index,
+                        "instagram.search.open",
+                        "{}",
+                        "",
+                        System.currentTimeMillis() + 30_000L));
+                assertEquals(ConnectorResult.Status.SUCCEEDED, result.status());
+                references.add(new WeakReference<>(wrapped));
+                references.add(new WeakReference<>(delegate));
+            }
+        } finally {
+            System.setErr(previousErr);
+            if (previousLogging == null) {
+                System.clearProperty("instagram.connector.consoleLog");
+            } else {
+                System.setProperty("instagram.connector.consoleLog", previousLogging);
+            }
+        }
+        return references;
+    }
+
+    /**
+     * 输入：对象弱引用列表。
+     * 输出：是否仍有对象未被回收。
+     * 作用：为有界 GC 重试提供退出和最终断言条件。
+     */
+    private boolean hasLiveReference(List<WeakReference<?>> references) {
+        return references.stream().anyMatch(reference -> reference.get() != null);
     }
 
     /**

@@ -13,7 +13,11 @@ public final class BatchQueryCapabilityTest {
      */
     @Test
     public void returnsTrueForExplicitBooleanTrue() {
-        assertTrue(BatchQueryCapability.supports(new ExplicitTrue()));
+        ExplicitTrue runtime = new ExplicitTrue();
+
+        assertTrue(BatchQueryCapability.supports(runtime));
+        assertTrue(BatchQueryCapability.supports(runtime));
+        assertTrue(runtime.calls == 1);
     }
 
     /**
@@ -51,12 +55,15 @@ public final class BatchQueryCapabilityTest {
     }
 
     private static final class ExplicitTrue {
+        private int calls;
+
         /**
          * 输入：无。
          * 输出：true。
          * 作用：模拟显式支持批量 query 的 Runtime。
          */
         public boolean supportsBatchQuery() {
+            calls++;
             return true;
         }
     }
