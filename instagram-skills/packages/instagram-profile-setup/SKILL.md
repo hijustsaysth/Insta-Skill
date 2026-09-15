@@ -55,4 +55,8 @@ node .\dist\cli.bundle.js invoke --action instagram_profile_edit_plan --input-js
 
 以下情况直接失败：缺少目标所需输入、字段超限、`avatarCount` 非 `2/3`、有生成能力但头像数量不等、未审批却请求编辑计划、编辑计划无更新字段。
 
-成功时只输出 `targets` 请求字段且满足上述格式；头像还须 `referenceAssets.length >= 1`、`generatedAvatarAssets.length === avatarCount`、`avatarGeneration.status === generated`，且 `avatarAsset` 来自生成列表；编辑计划须 `approved=true`、有更新字段、`requestDraft` 无审核证据，且本 skill 未执行修改。
+## 成功条件
+
+* `targets` 不含 `avatar`（仅 `username`、`displayName`、`biography`）时，只验证并输出请求的普通资料字段，不要求 `referenceAssets`、`generatedAvatarAssets` 或 `avatarGeneration.status`。
+* `targets` 含 `avatar` 时，要求 `referenceAssets.length >= 1`、`generatedAvatarAssets.length === avatarCount`、`avatarGeneration.status === generated`，且 `avatarAsset` 来自 `generatedAvatarAssets`。
+* 编辑计划须 `approved=true`、有更新字段、`requestDraft` 无审核证据，且本 skill 未执行修改。

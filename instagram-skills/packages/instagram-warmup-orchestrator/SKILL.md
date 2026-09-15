@@ -38,7 +38,9 @@ node .\dist\cli.bundle.js invoke --action instagram_warmup_result_summarize --in
 
 `keywords` 缺失或为空时使用默认草案，agent 服务可按上下文替换。`toolHints` 仅是后续工具建议，不代表已执行或必须全部调用；agent 服务须按页面、权限、用户确认和返回结果决定是否执行。
 
-计划可建议的执行工具包括：`instagram_profile_generate`、`instagram_profile_edit_plan`、`instagram.app.open`、`instagram.search.open`、`instagram.search.input`、`instagram.search.open_first_reel`、`instagram.reel.collect_signals`、`instagram_video_evaluate`、`instagram_video_comment_generate`、`instagram.reel.like`、`instagram.reel.comment`、`instagram.reel.next`、`instagram_video_log_summarize`。
+计划可建议的执行工具包括：`instagram_profile_generate`、`instagram_profile_edit_plan`、`instagram.app.open`、`instagram.search.open`、`instagram.search.input`、`instagram.search.open_first_reel`、`instagram.reel.collect_signals`、`instagram_video_evaluate`、`instagram.reel.like`、`instagram.reel.comment`、`instagram.reel.next`、`instagram_video_log_summarize`。
+
+评论文本由 agent 根据当前 Reel 信号和下方评论临场起草，不是工具调用，不得写入 `toolHints`。
 
 ### 阶段规则
 
