@@ -5,147 +5,49 @@ description: 当需要规划 Instagram Reel 原子动作组合、判断单条视
 
 # instagram-video-interaction
 
-## 职责边界
+## 边界与路由
 
-本 skill 只负责生成原子动作组合流程的视频动作计划、单条视频判断和日志汇总，不直接执行 Instagram 操作；换句话说，本 skill 不负责执行 Instagram 操作。
+本 skill 只生成原子视频动作计划、单条视频判断和真实日志汇总，不执行 Instagram 操作。打开 App、搜索/Reel、截图/OCR、等待、点赞、评论、滑动由 agent 服务调用 `instagram-connector` CLI。
 
-真实操作，例如：打开 App、搜索、打开 Reel、截图/OCR 采集、观看等待、点赞、评论和滑动，由 agent 服务调用 `instagram-connector` CLI 完成。
+需要按内容判断点赞/评论时使用本 skill 并逐步执行 connector 原子动作；只连续观看固定时长且不互动时，直接调用 `instagram.reels.engage_workflow`，用 `perVideoWatchMs`、`totalWatchMs` 控制时长。
 
-## 任务路由
+计划来自 `instagram_warmup_plan` 或用户要求养号汇总，且所有任务已进入 `succeeded`、`failed`、`skipped` 终态、当前不在重试/确认等待/工具调用/恢复中、日志已收齐时，调用 `instagram-warmup-orchestrator` 汇总。
 
-* 如果任务要求点赞、评论或按内容判断是否互动，使用本 skill 生成原子动作组合流程的视频动作计划，再由 agent 服务逐步调用 `instagram-connector` 的原子动作。例如：“帮我在 ins 上看几个美食视频，并点赞评论”。
-* 如果任务只要求连续观看一定时间的视频，不点赞、不评论，直接调用 `instagram-connector` 的 `instagram.reels.engage_workflow`，由 `perVideoWatchMs` 和 `totalWatchMs` 控制每条视频观看时长和总观看时长。例如：“帮我在 ins 上连续看 20 分钟美食视频”。
+## 工具与 CLI
 
-## 后置条件
-
-当以下条件全部满足时，需要使用 `instagram-warmup-orchestrator` skill 生成汇总日志：
-
-* 本轮任务由 `instagram_warmup_plan` 生成，或用户明确要求生成养号任务汇总。
-* 执行计划中的所有任务都已进入终态：`succeeded`、`failed` 或 `skipped`。
-* 当前不处于错误重试、人工确认等待、工具调用中或恢复执行阶段。
-* agent 服务已经收集到每个任务对应的结构化执行日志。
-
-## 推荐调用流程
-
-1. 使用 `instagram_video_interaction_plan` 生成原子动作组合流程的视频动作计划，支持观看、点赞和评论决策。
-   该工具只生成结构化计划，不执行连续观看 runner。
-2. agent 服务按计划调用 `instagram-connector` CLI 搜索、打开 Reel，并采集 `visibleText`、`ocrText`、`frameAssets` 和 `alreadyLiked`。
-3. 使用 `instagram_video_evaluate` 判断当前 Reel 是否匹配目标，以及是否建议点赞或评论。
-4. 观看2-3秒后再点赞或评论，点赞和评论这两个动作之间不需要停顿
-5. 如果建议评论，agent 服务根据当前视频信号和下方评论建议自行起草评论文本。
-6. agent 服务在取得副作用确认后，再调用 `instagram-connector` CLI 执行点赞或评论。
-7. 需要继续看下一条时，agent 服务调用 `instagram.reel.next`；这是独立动作链路，不等同于 `instagram.reels.engage_workflow`。
-8. 每次真实动作完成后记录日志，任务结束时使用 `instagram_video_log_summarize` 汇总真实用户轨迹。
-9. 如果遇到 `UI_DUMP_IDLE_TIMEOUT: ERROR: could not get idle state.`这一类错误两次以上，改用截图的形式观察内容。
-
-## 注册工具
-
-* `instagram_video_interaction_plan`
-* `instagram_video_evaluate`
-* `instagram_video_log_summarize`
-
-## CLI 命令入口
-
-发布后的 skill 包提供 CLI 入口，agent 可以在 skill 目录内直接调用：
+工具：`instagram_video_interaction_plan`、`instagram_video_evaluate`、`instagram_video_log_summarize`。
 
 ```powershell
 node .\dist\cli.bundle.js list-tools
 node .\dist\cli.bundle.js invoke --action instagram_video_interaction_plan --input-json '{"accountId":"ig-account-001","sessionRef":"session-ref-001","keywords":["fitness"],"targetDescription":"fitness reels","maxLikes":5,"maxComments":2,"minDwellMs":5000,"maxDwellMs":15000}'
-node .\dist\cli.bundle.js invoke --action instagram_video_evaluate --input-json '{"accountId":"ig-account-001","keyword":"fitness","targetDescription":"fitness reels","visibleText":["fitness"],"remainingLikeCount":1,"remainingCommentCount":0,"minDwellMs":5000,"maxDwellMs":15000}'
-node .\dist\cli.bundle.js invoke --action instagram_video_log_summarize --input-json video-log.json
+node .\dist\cli.bundle.js invoke --action instagram_video_evaluate --input-json video-evaluate.json
 ```
 
-如果 agent runtime 已把本 skill 的 `bin` 暴露到 `PATH`，也可以使用：
+也支持 PATH bin。`--input-json` 接受内联 JSON、文件或 stdin `-`；CLI 返回 `{ "ok": true, "result": ... }`，失败返回 `{ "ok": false, "error": { "code": "...", "message": "..." } }`。
 
-```powershell
-instagram-video-interaction list-tools
-instagram-video-interaction invoke --action instagram_video_evaluate --input-json video-evaluate.json
-instagram-video-interaction invoke --action instagram_video_log_summarize --input-json -
-```
+## 输入
 
-`--input-json` 支持内联 JSON、JSON 文件路径和 stdin `-`。CLI 输出固定为 `{ "ok": true, "result": ... }`，失败时输出 `{ "ok": false, "error": { "code": "...", "message": "..." } }`。
+* `instagram_video_interaction_plan` 必填：`accountId`、`sessionRef`、`keywords`、`targetDescription`、`maxLikes`、`maxComments`、`minDwellMs`、`maxDwellMs`。
+* `instagram_video_evaluate` 必填：`accountId`、`keyword`、`targetDescription`、`remainingLikeCount`、`remainingCommentCount`、`minDwellMs`、`maxDwellMs`；可选：`visibleText`、`ocrText`、`frameAssets`、`visionModelAvailable`、`alreadyLiked`。
+* `instagram_video_log_summarize` 必填：`accountId`、`startedAt`、`endedAt`、`items`。
 
-## 工具输入
+## 执行流程
 
-`instagram_video_interaction_plan` 必填：
+1. 用 `instagram_video_interaction_plan` 生成观看/点赞/评论决策计划；它不执行连续观看 runner。
+2. agent 服务按计划搜索、打开 Reel，采集 `visibleText`、`ocrText`、`frameAssets`、`alreadyLiked`，再用 `instagram_video_evaluate` 判断。
+3. 观看 2-3 秒后再点赞或评论；两动作之间无需停顿。评论由 agent 根据当前信号和下方评论临场起草。
+4. 取得副作用确认后才调用 connector 点赞/评论；下一条用独立的 `instagram.reel.next`，不等同于 engage workflow。
+5. 每次真实动作后记录日志，结束时用 `instagram_video_log_summarize` 汇总真实轨迹。
+6. `UI_DUMP_IDLE_TIMEOUT: ERROR: could not get idle state.` 类错误超过两次后改用截图观察。
 
-```text
-accountId
-sessionRef
-keywords
-targetDescription
-maxLikes
-maxComments
-minDwellMs
-maxDwellMs
-```
+## 点赞与评论
 
-`instagram_video_evaluate` 必填：
+connector 已返回点赞状态时必须传 `alreadyLiked`：`alreadyLiked=true` 时 `shouldLike=false`；`alreadyLiked=false` 且剩余额度大于 0 时才可按匹配结果建议点赞。状态未知时，真正调用 `instagram.reel.like` 前再次确认，避免取消已有点赞。
 
-```text
-accountId
-keyword
-targetDescription
-remainingLikeCount
-remainingCommentCount
-minDwellMs
-maxDwellMs
-```
+评论应简短、结合账号名/文案/画面/`commentIntent`，同轮句式不同；禁止硬广、推销、私信引导、链接、邮箱、电话、WhatsApp、价格、促销、折扣、夸大承诺及冒充官方/专业身份。
 
-`instagram_video_evaluate` 可选：
-
-```text
-visibleText
-ocrText
-frameAssets
-visionModelAvailable
-alreadyLiked
-```
-
-`instagram_video_log_summarize` 必填：
-
-```text
-accountId
-startedAt
-endedAt
-items
-```
-
-## 点赞规则
-
-agent 服务调用 `instagram_video_evaluate` 时，如果 connector 已返回当前 Reel 的点赞状态，应传入 `alreadyLiked`。
-
-* `alreadyLiked=true` 时，`shouldLike` 必须为 `false`。
-* `alreadyLiked=false` 且剩余点赞次数大于 0 时，才允许根据内容匹配结果建议点赞。
-* 如果无法确认点赞状态，agent 服务应在真正调用 `instagram.reel.like` 前再次通过 connector 确认，避免误取消已点赞内容。
-
-## 评论规则
-
-本包不提供评论生成函数，评论文本由 agent 服务根据视频信号临场起草。
-
-评论建议：
-
-* 评论要短，像真实用户随手评论。
-* 优先结合当前 Reel 的账号名、文案、画面或 `commentIntent`，避免无上下文模板。
-* 同一轮多条评论应使用不同句式，不要只替换关键词。
-* 不要硬广，不要推销，不要引导私信。
-* 不要包含链接、邮箱、电话、WhatsApp、价格或促销话术。
-* 不要夸大承诺，不要冒充官方或专业身份。
-
-评论草案不能包含链接、联系方式、促销、折扣、价格、私信引导或硬广话术。
-
-agent 服务执行评论前必须检查 `instagram-connector` 返回的评论输入结果：
-
-* 中文、Emoji 或其他非 ASCII 评论依赖 connector 的 ADB Keyboard 输入能力。
-* 如果 connector 返回 `UI_INPUT_UNICODE_UNSUPPORTED`，记录降级并停止本次评论，不重新生成替代评论，除非用户明确允许改成 ASCII 评论。
-* ASCII 评论可以在 ADB Keyboard 不可用时由 connector 使用 `adb input text` 兜底。
+执行前检查 connector 输入结果：中文、Emoji、非 ASCII 依赖 ADB Keyboard。返回 `UI_INPUT_UNICODE_UNSUPPORTED` 时记录降级并停止，不生成替代评论；仅用户明确允许才改 ASCII。ASCII 可由 `adb input text` 兜底。
 
 ## 无视觉模型降级
 
-如果 agent 服务没有接入视觉模型：
-
-* 不分析 `frameAssets`。
-* 只使用 `visibleText` 和 `ocrText`。
-* 文本信号不足时返回停留时长建议或跳过原因。
-* 文本信号不足时不建议点赞。
-* 文本信号不足时不建议评论。
+无视觉模型时不分析 `frameAssets`，仅用 `visibleText`、`ocrText`；文本不足时只返回停留建议或跳过原因，不建议点赞或评论。
