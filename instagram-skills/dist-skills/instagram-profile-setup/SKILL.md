@@ -58,5 +58,6 @@ node .\dist\cli.bundle.js invoke --action instagram_profile_edit_plan --input-js
 ## 成功条件
 
 * `targets` 不含 `avatar`（仅 `username`、`displayName`、`biography`）时，只验证并输出请求的普通资料字段，不要求 `referenceAssets`、`generatedAvatarAssets` 或 `avatarGeneration.status`。
-* `targets` 含 `avatar` 时，要求 `referenceAssets.length >= 1`、`generatedAvatarAssets.length === avatarCount`、`avatarGeneration.status === generated`，且 `avatarAsset` 来自 `generatedAvatarAssets`。
+* `targets` 含 `avatar` 且确认具备图片生成能力时，要求 `referenceAssets.length >= 1`、`generatedAvatarAssets.length === avatarCount`、`avatarGeneration.status === generated`，并返回来自 `generatedAvatarAssets` 的 `avatarAsset`；不得使用 degraded 结果。
+* `targets` 含 `avatar` 且确认环境没有图片生成能力时，允许 `avatarGeneration.status === degraded`，但须有非空 `fallbackReason`，输入 `generatedAvatarAssets` 和输出 `avatarGeneration.generatedAssets` 均为空，且不返回 `avatarAsset`；这是合法降级结果，不是失败，也不得与 generated 分支混用。
 * 编辑计划须 `approved=true`、有更新字段、`requestDraft` 无审核证据，且本 skill 未执行修改。
