@@ -76,7 +76,7 @@ instagram.profile.update
 
 1. 优先使用外部 ADB Keyboard；默认组件 `com.android.adbkeyboard/.AdbIME`，默认广播 `ADB_INPUT_B64`，以 UTF-8 base64 传输。
 2. ADB Keyboard 不可用时，仅 `U+0020` 至 `U+007E` 的可打印 ASCII 可用 `adb input text` 兜底。
-3. 中文、Emoji、换行、全角标点等非 ASCII 必须返回降级；`UI_INPUT_UNICODE_UNSUPPORTED` 时立即停止评论，不得点击 Post。
+3. ADB Keyboard 可用时，中文、Emoji、换行、全角标点等非 ASCII 正常经 `ADB_INPUT_B64` 以 UTF-8 base64 发送；仅当 ADB Keyboard 不可用或无法启用时才返回降级。返回 `UI_INPUT_UNICODE_UNSUPPORTED` 时立即停止评论，不得点击 Post。
 4. 使用中文或 Emoji 前应安装并启用 ADB Keyboard；connector 输入时临时切换，之后尽量恢复。命令行回传乱码可忽略。
 
 ## 结果与副作用
